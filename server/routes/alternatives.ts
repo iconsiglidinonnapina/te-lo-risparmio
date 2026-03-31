@@ -1,4 +1,16 @@
 import type { FastifyInstance } from 'fastify';
+import { getItem, searchAlternatives, CreatorsApiError } from '../services/creators-api-client.js';
+import { extractKeywords } from '../services/keyword-extractor.js';
+import { rankAlternatives, type RankedProduct } from '../services/alternative-ranker.js';
+import { TtlCache } from '../services/cache.js';
+
+const ONE_HOUR = 60 * 60 * 1000;
+const alternativesCache = new TtlCache<AlternativesResponse>(ONE_HOUR);
+
+export interface AlternativesResponse {
+  asin: string;
+  alternatives: RankedProduct[];
+}
 
 export function alternativesRoutes(app: FastifyInstance) {
   app.get<{ Params: { asin: string } }>(
@@ -15,8 +27,53 @@ export function alternativesRoutes(app: FastifyInstance) {
       },
     },
     async (request, reply) => {
-      // TODO: T4.1.5 — implementare ricerca alternative via Creators API SearchItems
-      return reply.status(501).send({ error: 'Not implemented' });
+      const { asin } = request.params;
+
+      const cached = alternativesCache.get(asin);
+      if (cached) {
+        return cached;
+      }
+
+      try {
+        // 1. Fetch the main product to get browseNodeId, title, and price
+        const product = await getItem(asin);
+
+        if (!product.price) {
+          return reply
+            .status(422)
+            .send({ error: 'Prezzo del prodotto non disponibile', code: 'NO_PRICE' });
+        }
+
+        // 2. Extract keywords from title for the search query
+        const keywords = extractKeywords(product.title);
+        if (!keywords) {
+          return reply
+            .status(422)
+            .send({ error: 'Impossibile estrarre parole chiave dal titolo', code: 'NO_KEYWORDS' });
+        }
+
+        // 3. Search for alternatives in the same category with price ≤ current price
+        const rawAlternatives = await searchAlternatives({
+          browseNodeId: product.browseNodeId ?? undefined,
+          keywords,
+          maxPrice: product.price.amount,
+          excludeAsin: asin,
+        });
+
+        // 4. Rank and select top 5
+        const ranked = rankAlternatives(rawAlternatives, product.price.amount, 5);
+
+        const response: AlternativesResponse = { asin, alternatives: ranked };
+        alternativesCache.set(asin, response);
+
+        return response;
+      } catch (err) {
+        if (err instanceof CreatorsApiError) {
+          return reply.status(404).send({ error: err.message, code: err.code });
+        }
+        request.log.error(err, 'Errore durante la ricerca alternative');
+        return reply.status(502).send({ error: 'Errore di comunicazione con Amazon' });
+      }
     },
   );
 }

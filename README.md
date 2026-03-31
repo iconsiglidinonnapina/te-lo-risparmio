@@ -80,8 +80,16 @@ Il progetto usa un `tsconfig.json` con regole strict rinforzate:
 ├── server/                       # Backend (Fastify)
 │   ├── index.ts                  # Entry point server
 │   ├── config.ts                 # Env vars
-│   ├── routes/                   # Route API (da implementare)
-│   └── services/                 # Servizi business (da implementare)
+│   ├── routes/                   # Route API
+│   │   ├── validate.ts           # POST /api/validate-link
+│   │   ├── product.ts            # GET  /api/product/:asin
+│   │   └── alternatives.ts       # GET  /api/alternatives/:asin
+│   └── services/                 # Servizi business
+│       ├── asin-extractor.ts     # Estrazione ASIN da URL
+│       ├── creators-api-client.ts # Wrapper Amazon Creators API
+│       ├── keyword-extractor.ts  # Estrazione keywords da titoli
+│       ├── alternative-ranker.ts # Ranking alternative (score composito)
+│       └── cache.ts              # Cache in-memory con TTL
 │
 ├── src/                          # Frontend (Vue 3 + Pinia)
 │   ├── main.ts                   # Bootstrap app
@@ -91,10 +99,19 @@ Il progetto usa un `tsconfig.json` con regole strict rinforzate:
 │   │   └── main.css              # Tailwind v4 import
 │   ├── components/               # Componenti Vue (da creare)
 │   ├── stores/                   # Pinia stores (da creare)
-│   ├── api/                      # API client (da creare)
-│   └── utils/                    # Utility (da creare)
+│   ├── api/                      # API client
+│   │   └── client.ts             # Fetch wrapper
+│   └── utils/                    # Utility
+│       └── asin-extractor.ts     # ASIN extractor (client-side)
 │
-└── tests/                        # Test (da creare)
+└── tests/                        # Test (Vitest)
+    ├── asin-extractor.test.ts
+    ├── asin-extractor-server.test.ts
+    ├── cache.test.ts
+    ├── keyword-extractor.test.ts
+    ├── product-route.test.ts
+    ├── alternative-ranker.test.ts
+    └── alternatives-route.test.ts
 ```
 
 ## Variabili d'ambiente
