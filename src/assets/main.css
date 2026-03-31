@@ -28,6 +28,27 @@ body {
   background-color: #f9fafb;
 }
 
+/* Carousel — touch-friendly scroll snap */
+.carousel {
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: #d1d5db transparent;
+}
+
+.carousel > * {
+  scroll-snap-align: start;
+}
+
+/* Truncate multi-line text */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 @media (forced-colors: active) {
   button {
     border: 2px solid ButtonBorder;
@@ -37,8 +58,17 @@ body {
     border: 1px solid ButtonBorder;
   }
 
+  a {
+    border: 1px solid LinkText;
+  }
+
   svg {
     fill: currentColor;
     stroke: currentColor;
+  }
+
+  /* Traffic light circles: use outline for visibility */
+  .traffic-light-dot {
+    forced-color-adjust: auto;
   }
 }
