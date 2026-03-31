@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { getItem, CreatorsApiError, type ProductData } from '../services/creators-api-client.js';
 import { extractKeywords } from '../services/keyword-extractor.js';
+import { buildAffiliateLink } from '../services/affiliate-builder.js';
 import { TtlCache } from '../services/cache.js';
 
 const ONE_HOUR = 60 * 60 * 1000;
@@ -8,6 +9,7 @@ const productCache = new TtlCache<ProductData>(ONE_HOUR);
 
 export interface ProductResponse extends ProductData {
   keywords: string;
+  affiliateUrl: string;
 }
 
 export function productRoutes(app: FastifyInstance) {
@@ -30,7 +32,8 @@ export function productRoutes(app: FastifyInstance) {
       const cached = productCache.get(asin);
       if (cached) {
         const keywords = extractKeywords(cached.title);
-        return { ...cached, keywords } satisfies ProductResponse;
+        const affiliateUrl = buildAffiliateLink(cached.asin);
+        return { ...cached, keywords, affiliateUrl } satisfies ProductResponse;
       }
 
       try {
@@ -38,7 +41,8 @@ export function productRoutes(app: FastifyInstance) {
         productCache.set(asin, product);
 
         const keywords = extractKeywords(product.title);
-        return { ...product, keywords } satisfies ProductResponse;
+        const affiliateUrl = buildAffiliateLink(product.asin);
+        return { ...product, keywords, affiliateUrl } satisfies ProductResponse;
       } catch (err) {
         if (err instanceof CreatorsApiError) {
           return reply.status(404).send({ error: err.message, code: err.code });

@@ -89,6 +89,7 @@ Il progetto usa un `tsconfig.json` con regole strict rinforzate:
 │       ├── creators-api-client.ts # Wrapper Amazon Creators API
 │       ├── keyword-extractor.ts  # Estrazione keywords da titoli
 │       ├── alternative-ranker.ts # Ranking alternative (score composito)
+│       ├── affiliate-builder.ts  # Costruzione link affiliati canonici
 │       └── cache.ts              # Cache in-memory con TTL
 │
 ├── src/                          # Frontend (Vue 3 + Pinia)
@@ -111,6 +112,7 @@ Il progetto usa un `tsconfig.json` con regole strict rinforzate:
     ├── keyword-extractor.test.ts
     ├── product-route.test.ts
     ├── alternative-ranker.test.ts
+    ├── affiliate-builder.test.ts
     └── alternatives-route.test.ts
 ```
 

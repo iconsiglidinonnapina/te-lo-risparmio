@@ -2,14 +2,19 @@ import type { FastifyInstance } from 'fastify';
 import { getItem, searchAlternatives, CreatorsApiError } from '../services/creators-api-client.js';
 import { extractKeywords } from '../services/keyword-extractor.js';
 import { rankAlternatives, type RankedProduct } from '../services/alternative-ranker.js';
+import { buildAffiliateLink } from '../services/affiliate-builder.js';
 import { TtlCache } from '../services/cache.js';
 
 const ONE_HOUR = 60 * 60 * 1000;
 const alternativesCache = new TtlCache<AlternativesResponse>(ONE_HOUR);
 
+export interface AlternativeWithAffiliateUrl extends RankedProduct {
+  affiliateUrl: string;
+}
+
 export interface AlternativesResponse {
   asin: string;
-  alternatives: RankedProduct[];
+  alternatives: AlternativeWithAffiliateUrl[];
 }
 
 export function alternativesRoutes(app: FastifyInstance) {
@@ -63,7 +68,13 @@ export function alternativesRoutes(app: FastifyInstance) {
         // 4. Rank and select top 5
         const ranked = rankAlternatives(rawAlternatives, product.price.amount, 5);
 
-        const response: AlternativesResponse = { asin, alternatives: ranked };
+        // 5. Attach affiliate links to each alternative
+        const alternatives = ranked.map((alt) => ({
+          ...alt,
+          affiliateUrl: buildAffiliateLink(alt.asin),
+        }));
+
+        const response: AlternativesResponse = { asin, alternatives };
         alternativesCache.set(asin, response);
 
         return response;
