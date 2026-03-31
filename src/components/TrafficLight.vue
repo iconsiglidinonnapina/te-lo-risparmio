@@ -8,27 +8,27 @@ const props = defineProps<{
 
 const borderColor = computed(() => {
   const map = {
-    green: 'border-green-400',
-    yellow: 'border-amber-400',
-    red: 'border-red-400',
+    green: 'border-green-400 dark:border-green-600',
+    yellow: 'border-amber-400 dark:border-amber-600',
+    red: 'border-red-400 dark:border-red-600',
   } as const;
   return map[props.evaluation.color];
 });
 
 const bgColor = computed(() => {
   const map = {
-    green: 'bg-green-50',
-    yellow: 'bg-amber-50',
-    red: 'bg-red-50',
+    green: 'bg-green-50 dark:bg-green-900/20',
+    yellow: 'bg-amber-50 dark:bg-amber-900/20',
+    red: 'bg-red-50 dark:bg-red-900/20',
   } as const;
   return map[props.evaluation.color];
 });
 
 const labelColor = computed(() => {
   const map = {
-    green: 'text-green-800',
-    yellow: 'text-amber-800',
-    red: 'text-red-800',
+    green: 'text-green-800 dark:text-green-400',
+    yellow: 'text-amber-800 dark:text-amber-400',
+    red: 'text-red-800 dark:text-red-400',
   } as const;
   return map[props.evaluation.color];
 });
@@ -76,7 +76,7 @@ const labelColor = computed(() => {
         <p id="traffic-light-label" class="text-lg font-bold uppercase" :class="labelColor">
           {{ evaluation.label }}
         </p>
-        <p class="mt-1 text-sm text-gray-700">{{ evaluation.explanation }}</p>
+        <p class="mt-1 text-sm text-gray-700 dark:text-gray-300">{{ evaluation.explanation }}</p>
       </div>
     </div>
   </section>

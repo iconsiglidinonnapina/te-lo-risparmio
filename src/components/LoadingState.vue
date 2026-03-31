@@ -14,7 +14,7 @@ const steps: { key: LoadingStep; label: string }[] = [
 <template>
   <div class="flex flex-col items-center gap-6 py-16" role="status" aria-live="polite">
     <svg
-      class="h-12 w-12 animate-spin text-blue-600"
+      class="h-12 w-12 animate-spin text-teal-600 dark:text-teal-400"
       xmlns="http://www.w3.org/2000/svg"
       fill="none"
       viewBox="0 0 24 24"
@@ -28,7 +28,7 @@ const steps: { key: LoadingStep; label: string }[] = [
       />
     </svg>
 
-    <p class="text-lg font-medium text-gray-700">Analisi in corso</p>
+    <p class="text-lg font-medium text-gray-700 dark:text-gray-300">Analisi in corso</p>
 
     <ol class="space-y-2">
       <li
@@ -37,10 +37,10 @@ const steps: { key: LoadingStep; label: string }[] = [
         class="flex items-center gap-2 text-sm"
         :class="[
           step === s.key
-            ? 'font-medium text-blue-700'
+            ? 'font-medium text-teal-700 dark:text-teal-400'
             : index < steps.findIndex((x) => x.key === step)
-              ? 'text-green-700'
-              : 'text-gray-400',
+              ? 'text-green-700 dark:text-green-400'
+              : 'text-gray-400 dark:text-gray-500',
         ]"
       >
         <span aria-hidden="true" class="flex h-5 w-5 items-center justify-center">
@@ -57,8 +57,11 @@ const steps: { key: LoadingStep; label: string }[] = [
               clip-rule="evenodd"
             />
           </svg>
-          <span v-else-if="step === s.key" class="h-2 w-2 animate-pulse rounded-full bg-blue-600" />
-          <span v-else class="h-2 w-2 rounded-full bg-gray-300" />
+          <span
+            v-else-if="step === s.key"
+            class="h-2 w-2 animate-pulse rounded-full bg-teal-600 dark:bg-teal-400"
+          />
+          <span v-else class="h-2 w-2 rounded-full bg-gray-300 dark:bg-gray-600" />
         </span>
         {{ s.label }}
       </li>

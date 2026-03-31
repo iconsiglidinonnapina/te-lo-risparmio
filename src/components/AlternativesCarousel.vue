@@ -19,13 +19,13 @@ function scrollBy(direction: -1 | 1) {
 <template>
   <section v-if="alternatives.length > 0" aria-labelledby="alternatives-heading">
     <div class="flex items-center justify-between">
-      <h3 id="alternatives-heading" class="text-lg font-semibold text-gray-900">
+      <h3 id="alternatives-heading" class="text-lg font-semibold text-gray-900 dark:text-gray-100">
         Alternative consigliate
       </h3>
       <div class="hidden gap-1 sm:flex" aria-hidden="true">
         <button
           type="button"
-          class="rounded-full border border-gray-300 p-1.5 text-gray-500 transition-colors hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
+          class="cursor-pointer rounded-full border border-gray-300 p-1.5 text-gray-500 transition-colors hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-offset-2 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 dark:focus:ring-offset-gray-950"
           aria-label="Scorri a sinistra"
           @click="scrollBy(-1)"
         >
@@ -44,7 +44,7 @@ function scrollBy(direction: -1 | 1) {
         </button>
         <button
           type="button"
-          class="rounded-full border border-gray-300 p-1.5 text-gray-500 transition-colors hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
+          class="cursor-pointer rounded-full border border-gray-300 p-1.5 text-gray-500 transition-colors hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-offset-2 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 dark:focus:ring-offset-gray-950"
           aria-label="Scorri a destra"
           @click="scrollBy(1)"
         >
@@ -75,7 +75,7 @@ function scrollBy(direction: -1 | 1) {
         v-for="alt in alternatives"
         :key="alt.asin"
         role="listitem"
-        class="w-48 shrink-0 snap-start rounded-xl border border-gray-200 bg-white p-3 shadow-sm transition-shadow hover:shadow-md sm:w-52"
+        class="w-48 shrink-0 snap-start rounded-xl border border-gray-200 bg-white p-3 shadow-sm transition-shadow hover:shadow-md dark:border-gray-800 dark:bg-gray-950 sm:w-52"
       >
         <div v-if="alt.imageUrl" class="flex h-32 items-center justify-center">
           <img
@@ -86,11 +86,11 @@ function scrollBy(direction: -1 | 1) {
           />
         </div>
 
-        <h4 class="mt-2 line-clamp-2 text-sm font-medium text-gray-900">
+        <h4 class="mt-2 line-clamp-2 text-sm font-medium text-gray-900 dark:text-gray-100">
           {{ alt.title }}
         </h4>
 
-        <p v-if="alt.price" class="mt-1 text-base font-bold text-gray-900">
+        <p v-if="alt.price" class="mt-1 text-base font-bold text-gray-900 dark:text-gray-100">
           {{ alt.price.displayAmount }}
         </p>
 
@@ -102,7 +102,7 @@ function scrollBy(direction: -1 | 1) {
           :href="alt.affiliateUrl"
           target="_blank"
           rel="noopener noreferrer"
-          class="mt-3 inline-flex w-full items-center justify-center gap-1 rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2"
+          class="mt-3 inline-flex w-full items-center justify-center gap-1 rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 dark:focus:ring-offset-gray-950"
         >
           Vedi su Amazon
           <svg

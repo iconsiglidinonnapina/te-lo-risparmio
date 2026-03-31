@@ -8,7 +8,9 @@ defineProps<{
 </script>
 
 <template>
-  <article class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6">
+  <article
+    class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950 sm:p-6"
+  >
     <div class="flex flex-col gap-4 sm:flex-row">
       <div
         v-if="product.imageUrl"
@@ -23,24 +25,24 @@ defineProps<{
       </div>
 
       <div class="min-w-0 flex-1">
-        <h2 class="text-lg font-semibold text-gray-900 sm:text-xl">
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100 sm:text-xl">
           {{ product.title }}
         </h2>
 
         <div class="mt-2 flex flex-wrap items-baseline gap-2">
-          <span v-if="product.price" class="text-2xl font-bold text-gray-900">
+          <span v-if="product.price" class="text-2xl font-bold text-gray-900 dark:text-gray-100">
             {{ product.price.displayAmount }}
           </span>
           <span
             v-if="product.listPrice"
-            class="text-base text-gray-400 line-through"
+            class="text-base text-gray-400 line-through dark:text-gray-500"
             aria-label="`Prezzo di listino: ${product.listPrice.displayAmount}`"
           >
             {{ product.listPrice.displayAmount }}
           </span>
           <span
             v-if="product.savingsPercentage"
-            class="rounded-full bg-green-100 px-2.5 py-0.5 text-sm font-medium text-green-800"
+            class="rounded-full bg-green-100 px-2.5 py-0.5 text-sm font-medium text-green-800 dark:bg-green-900/30 dark:text-green-400"
           >
             -{{ product.savingsPercentage }}%
           </span>
@@ -55,7 +57,7 @@ defineProps<{
             :href="product.affiliateUrl"
             target="_blank"
             rel="noopener noreferrer"
-            class="inline-flex items-center gap-1.5 rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2"
+            class="inline-flex items-center gap-1.5 rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 dark:focus:ring-offset-gray-950"
           >
             Vedi su Amazon
             <svg
@@ -72,7 +74,7 @@ defineProps<{
               />
             </svg>
           </a>
-          <p class="mt-1 text-xs text-gray-400">(link affiliato)</p>
+          <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">(link affiliato)</p>
         </div>
       </div>
     </div>

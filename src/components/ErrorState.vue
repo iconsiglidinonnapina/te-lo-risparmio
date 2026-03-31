@@ -10,10 +10,12 @@ defineEmits<{
 
 <template>
   <div class="flex flex-col items-center gap-4 py-16 text-center" role="alert">
-    <div class="flex h-14 w-14 items-center justify-center rounded-full bg-red-100">
+    <div
+      class="flex h-14 w-14 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30"
+    >
       <svg
         xmlns="http://www.w3.org/2000/svg"
-        class="h-7 w-7 text-red-600"
+        class="h-7 w-7 text-red-600 dark:text-red-400"
         viewBox="0 0 20 20"
         fill="currentColor"
         aria-hidden="true"
@@ -25,11 +27,11 @@ defineEmits<{
         />
       </svg>
     </div>
-    <p class="text-lg font-medium text-gray-900">Si è verificato un errore</p>
-    <p class="max-w-md text-sm text-gray-600">{{ message }}</p>
+    <p class="text-lg font-medium text-gray-900 dark:text-gray-100">Si è verificato un errore</p>
+    <p class="max-w-md text-sm text-gray-600 dark:text-gray-400">{{ message }}</p>
     <button
       type="button"
-      class="mt-2 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
+      class="mt-2 inline-flex cursor-pointer items-center gap-2 rounded-lg bg-teal-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-offset-2 dark:bg-teal-500 dark:hover:bg-teal-600 dark:focus:ring-offset-gray-950"
       @click="$emit('retry')"
     >
       <svg

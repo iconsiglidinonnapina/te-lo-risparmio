@@ -28,7 +28,7 @@ const ariaLabel = computed(() => {
         :key="i"
         xmlns="http://www.w3.org/2000/svg"
         class="h-4 w-4"
-        :class="i <= filledStars ? 'text-amber-400' : 'text-gray-300'"
+        :class="i <= filledStars ? 'text-amber-400' : 'text-gray-300 dark:text-gray-600'"
         viewBox="0 0 20 20"
         fill="currentColor"
       >
@@ -37,10 +37,14 @@ const ariaLabel = computed(() => {
         />
       </svg>
     </span>
-    <span v-if="rating !== null" class="text-sm text-gray-600" aria-hidden="true">
+    <span
+      v-if="rating !== null"
+      class="text-sm text-gray-600 dark:text-gray-400"
+      aria-hidden="true"
+    >
       {{ rating }}
     </span>
-    <span v-if="count !== null" class="text-sm text-gray-400" aria-hidden="true">
+    <span v-if="count !== null" class="text-sm text-gray-400 dark:text-gray-500" aria-hidden="true">
       ({{ formattedCount }})
     </span>
   </div>

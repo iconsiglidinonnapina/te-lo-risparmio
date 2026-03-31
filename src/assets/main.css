@@ -1,5 +1,7 @@
 @import 'tailwindcss';
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 /*
  * sr-only: visually hidden but accessible to screen readers.
  * Tailwind v4 includes this as a utility, but we define the
@@ -28,12 +30,22 @@ body {
   background-color: #f9fafb;
 }
 
+.dark body,
+body:where(.dark *) {
+  color: #e5e7eb;
+  background-color: #0c0c12;
+}
+
 /* Carousel — touch-friendly scroll snap */
 .carousel {
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
   scrollbar-color: #d1d5db transparent;
+}
+
+.dark .carousel {
+  scrollbar-color: #4b5563 transparent;
 }
 
 .carousel > * {
