@@ -12,6 +12,7 @@
     "dev:server": "tsx watch server/index.ts",
     "dev:client": "vite",
     "build": "vue-tsc --noEmit && vite build && node scripts/build-server.mjs",
+    "build:client": "vue-tsc --noEmit && vite build",
     "preview": "vite preview",
     "start": "node dist/server/index.js",
     "test": "vitest run",
