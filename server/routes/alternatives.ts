@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { getItem, searchAlternatives, CreatorsApiError } from '../services/creators-api-client.js';
-import { extractKeywords } from '../services/keyword-extractor.js';
+import { extractSearchQuery } from '../services/keyword-extractor.js';
 import { rankAlternatives, type RankedProduct } from '../services/alternative-ranker.js';
 import { buildAffiliateLink } from '../services/affiliate-builder.js';
 import { enrichAllWithReviews } from '../services/review-enricher.js';
@@ -50,19 +50,19 @@ export function alternativesRoutes(app: FastifyInstance) {
             .send({ error: 'Prezzo del prodotto non disponibile', code: 'NO_PRICE' });
         }
 
-        // 2. Extract keywords from title for the search query
-        const keywords = extractKeywords(product.title);
-        if (!keywords) {
+        // 2. Extract search query from title + category for tighter matching
+        const searchQuery = extractSearchQuery(product.title, product.browseNodeName);
+        if (!searchQuery) {
           return reply
             .status(422)
             .send({ error: 'Impossibile estrarre parole chiave dal titolo', code: 'NO_KEYWORDS' });
         }
 
-        // 3. Search for alternatives in the same category with price ≤ current price
+        // 3. Search for alternatives in the same category (no price cap — we need
+        //    the full price landscape for an accurate comparison)
         const rawAlternatives = await searchAlternatives({
           browseNodeId: product.browseNodeId ?? undefined,
-          keywords,
-          maxPrice: product.price.amount,
+          keywords: searchQuery,
           excludeAsin: asin,
         });
 

@@ -15,61 +15,42 @@ export interface PriceEvaluation {
 }
 
 // ---------------------------------------------------------------------------
-// Signal thresholds
+// Thresholds
 // ---------------------------------------------------------------------------
 
-const SAVINGS_HIGH = 25;
-const SAVINGS_MODERATE = 10;
+/** Savings percentage considered a meaningful discount */
+const SAVINGS_GOOD = 20;
+/** Savings percentage considered a small discount */
+const SAVINGS_SOME = 5;
 
+/** Product is significantly cheaper than alternatives */
 const ALT_MUCH_CHEAPER = 15;
-const ALT_SLIGHTLY_EXPENSIVE = 10;
-
-const REVIEW_GOOD = 4.5;
-const REVIEW_POOR = 3.5;
+/** Product is notably more expensive than alternatives */
+const ALT_EXPENSIVE = 10;
+/** Product is much more expensive than alternatives */
+const ALT_VERY_EXPENSIVE = 20;
 
 // ---------------------------------------------------------------------------
-// Internal scoring
+// Decision tree
 // ---------------------------------------------------------------------------
 
-/**
- * Scores the discount signal.
- * When savingsPercentage is null (savingBasis absent) returns 0 (neutral).
- */
-function scoreSavings(savingsPct: number | null): number {
-  if (savingsPct === null) return 0;
-  if (savingsPct >= SAVINGS_HIGH) return 2;
-  if (savingsPct >= SAVINGS_MODERATE) return 1;
-  if (savingsPct > 0) return 0;
-  return -1;
-}
+function decide(savingsPct: number | null, vsAltPct: number | null): SignalColor {
+  const hasSavings = savingsPct !== null && savingsPct >= SAVINGS_GOOD;
+  const hasSomeSavings = savingsPct !== null && savingsPct >= SAVINGS_SOME;
+  const noSavings = savingsPct === null || savingsPct < SAVINGS_SOME;
 
-/**
- * Scores how the product price compares to the average alternative price.
- * vsAltPct > 0 means the product is *cheaper* than alternatives.
- * Returns 0 when there are no alternatives.
- */
-function scoreVsAlternatives(vsAltPct: number | null): number {
-  if (vsAltPct === null) return 0;
-  if (vsAltPct >= ALT_MUCH_CHEAPER) return 2;
-  if (vsAltPct >= 0) return 1;
-  if (vsAltPct >= -ALT_SLIGHTLY_EXPENSIVE) return 0;
-  return -1;
-}
+  // GREEN: good discount + not more expensive than alternatives
+  //    OR: significantly cheaper than alternatives regardless of discount
+  if (hasSavings && (vsAltPct === null || vsAltPct >= 0)) return 'green';
+  if (vsAltPct !== null && vsAltPct >= ALT_MUCH_CHEAPER) return 'green';
+  if (hasSomeSavings && vsAltPct === null) return 'green';
 
-/**
- * Scores the product review rating as a quality/value proxy.
- */
-function scoreReview(rating: number | null): number {
-  if (rating === null) return 0;
-  if (rating >= REVIEW_GOOD) return 1;
-  if (rating >= REVIEW_POOR) return 0;
-  return -1;
-}
+  // RED: no meaningful discount + clearly more expensive than alternatives
+  if (noSavings && vsAltPct !== null && vsAltPct <= -ALT_EXPENSIVE) return 'red';
+  if (!hasSomeSavings && vsAltPct !== null && vsAltPct <= -ALT_VERY_EXPENSIVE) return 'red';
 
-function totalToColor(total: number): SignalColor {
-  if (total >= 2) return 'green';
-  if (total >= -1) return 'yellow';
-  return 'red';
+  // YELLOW: everything else
+  return 'yellow';
 }
 
 // ---------------------------------------------------------------------------
@@ -77,21 +58,19 @@ function totalToColor(total: number): SignalColor {
 // ---------------------------------------------------------------------------
 
 const LABELS: Record<SignalColor, string> = {
-  green: 'Buon prezzo',
+  green: 'Ottimo prezzo',
   yellow: 'Prezzo nella media',
   red: 'Prezzo alto',
 };
 
-function buildExplanation(
-  color: SignalColor,
-  savingsPct: number | null,
-  vsAltPct: number | null,
-): string {
+function buildExplanation(savingsPct: number | null, vsAltPct: number | null): string {
   const parts: string[] = [];
 
   if (savingsPct !== null) {
-    if (savingsPct >= SAVINGS_MODERATE) {
+    if (savingsPct >= SAVINGS_GOOD) {
       parts.push(`Sconto del ${savingsPct}% rispetto al prezzo di listino`);
+    } else if (savingsPct >= SAVINGS_SOME) {
+      parts.push(`Sconto del ${savingsPct}% rispetto al listino`);
     } else if (savingsPct > 0) {
       parts.push(`Sconto minimo del ${savingsPct}%`);
     } else {
@@ -110,11 +89,7 @@ function buildExplanation(
   }
 
   if (parts.length === 0) {
-    return color === 'green'
-      ? 'Il prezzo sembra vantaggioso'
-      : color === 'red'
-        ? 'Il prezzo non sembra conveniente'
-        : 'Non ci sono abbastanza dati per una valutazione completa';
+    return 'Prezzo pieno — nessun dato di confronto';
   }
 
   return parts.join('. ');
@@ -125,14 +100,15 @@ function buildExplanation(
 // ---------------------------------------------------------------------------
 
 /**
- * Evaluates whether a product's price is good, average, or high using three
- * signals: discount from list price, comparison with alternative products,
- * and review quality.
+ * Evaluates whether a product's price is good, average, or high using two
+ * primary signals: discount from list price and comparison with alternatives.
  *
- * When `savingsPercentage` is null (no `savingBasis`), the savings signal is
- * treated as neutral and the evaluation relies on alternatives and reviews.
- *
- * When `alternatives` is empty, the evaluation relies on savings and reviews.
+ * Decision tree (from ANALYSIS.md):
+ *  GREEN  → discount ≥ 20% AND (no alts OR cheaper/equal to alts)
+ *           OR significantly cheaper than alternatives (≥ 15%)
+ *           OR discount ≥ 5% with no alternatives to compare
+ *  RED    → no/low discount AND notably more expensive than alternatives (≥ 10%)
+ *  YELLOW → everything else
  */
 export function evaluatePrice(
   product: ProductData,
@@ -140,7 +116,7 @@ export function evaluatePrice(
 ): PriceEvaluation {
   const savingsPct = product.savingsPercentage;
 
-  // Compute average alternative price
+  // Compute how the product compares to alternatives (positive = cheaper)
   let vsAltPct: number | null = null;
   if (product.price && alternatives.length > 0) {
     const altPrices = alternatives
@@ -149,20 +125,17 @@ export function evaluatePrice(
 
     if (altPrices.length > 0) {
       const avgAltPrice = altPrices.reduce((sum, p) => sum + p, 0) / altPrices.length;
-      // Positive = product is cheaper, negative = product is more expensive
       vsAltPct =
         avgAltPrice > 0 ? ((avgAltPrice - product.price.amount) / avgAltPrice) * 100 : null;
     }
   }
 
-  const total =
-    scoreSavings(savingsPct) + scoreVsAlternatives(vsAltPct) + scoreReview(product.reviewRating);
-  const color = totalToColor(total);
+  const color = decide(savingsPct, vsAltPct);
 
   return {
     color,
     label: LABELS[color],
-    explanation: buildExplanation(color, savingsPct, vsAltPct),
+    explanation: buildExplanation(savingsPct, vsAltPct),
     savingsPct,
     vsAlternativesPct: vsAltPct !== null ? Math.round(vsAltPct * 100) / 100 : null,
   };

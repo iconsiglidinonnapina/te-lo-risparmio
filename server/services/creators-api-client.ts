@@ -42,6 +42,7 @@ export interface SearchAlternativesParams {
   browseNodeId?: string;
   keywords: string;
   maxPrice?: number;
+  minReviewsRating?: number;
   excludeAsin?: string;
 }
 
@@ -143,6 +144,9 @@ export async function searchAlternatives(params: SearchAlternativesParams): Prom
   if (params.maxPrice !== undefined) {
     // Amazon Creators API expects price in cents (lowest denomination)
     request.maxPrice = Math.round(params.maxPrice * 100);
+  }
+  if (params.minReviewsRating !== undefined) {
+    request.minReviewsRating = params.minReviewsRating;
   }
 
   const response = await api.searchItems(marketplace, request);

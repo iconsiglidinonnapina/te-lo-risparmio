@@ -148,7 +148,6 @@ describe('GET /api/alternatives/:asin', () => {
     expect(mockSearchAlternatives).toHaveBeenCalledWith({
       browseNodeId: '123456',
       keywords: expect.any(String) as string,
-      maxPrice: 45.99,
       excludeAsin: 'B084K866MQ',
     });
   });
@@ -200,6 +199,7 @@ describe('GET /api/alternatives/:asin', () => {
     mockGetItem.mockResolvedValueOnce({
       ...MOCK_PRODUCT,
       title: 'il la di del per con', // only stop words
+      browseNodeName: null, // no category fallback
     });
 
     const app = buildApp();

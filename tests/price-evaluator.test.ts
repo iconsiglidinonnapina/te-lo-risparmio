@@ -42,7 +42,7 @@ describe('evaluatePrice', () => {
       const result = evaluatePrice(product, alternatives);
 
       expect(result.color).toBe('green');
-      expect(result.label).toBe('Buon prezzo');
+      expect(result.label).toBe('Ottimo prezzo');
       expect(result.savingsPct).toBe(30);
       expect(result.vsAlternativesPct).toBeGreaterThan(0);
     });
@@ -177,11 +177,26 @@ describe('evaluatePrice', () => {
 
   // --- Review signal impact ---
   describe('review score impact', () => {
-    it('excellent reviews (>= 4.5) push toward green', () => {
+    it('excellent reviews do not override price signals', () => {
       const product = makeProduct({
         savingsPercentage: 12,
         reviewRating: 4.8,
         price: { amount: 45, currency: 'EUR', displayAmount: '45,00 €' },
+      });
+      // avg = 52.5, product is ~14% cheaper → not quite 15% threshold
+      const alternatives = [makeAlternative(50), makeAlternative(55)];
+
+      const result = evaluatePrice(product, alternatives);
+
+      // With 12% savings and ~14% cheaper: yellow (savings < 20%, vsAlt < 15%)
+      expect(result.color).toBe('yellow');
+    });
+
+    it('high discount with cheaper alt comparison yields green', () => {
+      const product = makeProduct({
+        savingsPercentage: 22,
+        reviewRating: 4.8,
+        price: { amount: 35, currency: 'EUR', displayAmount: '35,00 €' },
       });
       const alternatives = [makeAlternative(50), makeAlternative(55)];
 
