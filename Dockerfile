@@ -17,7 +17,7 @@ ENV NODE_ENV=production
 RUN apk add --no-cache dumb-init
 
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev && npm cache clean --force
+RUN npm ci --omit=dev --ignore-scripts && npm cache clean --force
 
 COPY --from=build /app/dist ./dist
 
