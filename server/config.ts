@@ -13,5 +13,15 @@ export const config = {
   },
 
   /** Origini consentite per CORS (GitHub Pages + dev locale) */
-  corsOrigins: (process.env.CORS_ORIGINS ?? 'http://localhost:5173').split(','),
+  corsOrigins: (process.env.CORS_ORIGINS ?? 'http://localhost:5173')
+    .split(',')
+    .map((o) => o.trim())
+    .filter((o) => {
+      try {
+        const url = new URL(o);
+        return url.protocol === 'https:' || url.protocol === 'http:';
+      } catch {
+        return false;
+      }
+    }),
 } as const;

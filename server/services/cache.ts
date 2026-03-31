@@ -6,9 +6,11 @@ export interface CacheEntry<T> {
 export class TtlCache<T> {
   private store = new Map<string, CacheEntry<T>>();
   private readonly ttlMs: number;
+  private readonly maxSize: number;
 
-  constructor(ttlMs: number) {
+  constructor(ttlMs: number, maxSize = 500) {
     this.ttlMs = ttlMs;
+    this.maxSize = maxSize;
   }
 
   get(key: string): T | undefined {
@@ -22,6 +24,14 @@ export class TtlCache<T> {
   }
 
   set(key: string, value: T): void {
+    // Evict expired entries first, then enforce max size (LRU-like: oldest first)
+    if (this.store.size >= this.maxSize) {
+      this.evictExpired();
+    }
+    if (this.store.size >= this.maxSize) {
+      const firstKey = this.store.keys().next().value;
+      if (firstKey !== undefined) this.store.delete(firstKey);
+    }
     this.store.set(key, { value, expiresAt: Date.now() + this.ttlMs });
   }
 

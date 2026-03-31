@@ -84,7 +84,7 @@ export function alternativesRoutes(app: FastifyInstance) {
         return response;
       } catch (err) {
         if (err instanceof CreatorsApiError) {
-          return reply.status(404).send({ error: err.message, code: err.code });
+          return reply.status(404).send({ error: 'Prodotto non trovato', code: err.code });
         }
         request.log.error(err, 'Errore durante la ricerca alternative');
         return reply.status(502).send({ error: 'Errore di comunicazione con Amazon' });

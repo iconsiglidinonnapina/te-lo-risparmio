@@ -1,6 +1,7 @@
 import { resolve } from 'node:path';
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
+import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
 import fastifyStatic from '@fastify/static';
 import { config } from './config.js';
@@ -12,11 +13,42 @@ const app = Fastify({
   logger: {
     level: config.nodeEnv === 'production' ? 'info' : 'debug',
   },
+  bodyLimit: 1_048_576, // 1 MB max body
+  requestTimeout: 30_000, // 30s timeout
+  trustProxy: config.nodeEnv === 'production',
+});
+
+// Security headers (Helmet)
+await app.register(helmet, {
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: [
+        "'self'",
+        'https://m.media-amazon.com',
+        'https://images-na.ssl-images-amazon.com',
+        'data:',
+      ],
+      connectSrc: ["'self'"],
+      fontSrc: ["'self'"],
+      objectSrc: ["'none'"],
+      frameAncestors: ["'none'"],
+      baseUri: ["'self'"],
+      formAction: ["'self'"],
+      upgradeInsecureRequests: [],
+    },
+  },
+  crossOriginEmbedderPolicy: false, // allow loading Amazon images
 });
 
 // CORS — necessario perché il frontend (GitHub Pages) è su un dominio diverso
 await app.register(cors, {
   origin: config.corsOrigins,
+  methods: ['GET', 'POST'],
+  allowedHeaders: ['Content-Type'],
+  maxAge: 86400,
 });
 
 // Rate limiting — protezione abuse (T8.1.3)

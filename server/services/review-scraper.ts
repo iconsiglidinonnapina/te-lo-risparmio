@@ -21,15 +21,30 @@ export async function scrapeReviews(asin: string): Promise<ReviewData> {
   const cached = REVIEW_CACHE.get(asin);
   if (cached) return cached;
 
-  const url = `https://www.amazon.it/dp/${encodeURIComponent(asin)}`;
+  // Strict ASIN validation to prevent SSRF
+  if (!/^[A-Z0-9]{10}$/.test(asin)) {
+    const empty: ReviewData = { rating: null, count: null };
+    return empty;
+  }
+
+  const url = `https://www.amazon.it/dp/${asin}`;
 
   try {
     const res = await fetch(url, {
       headers: { 'User-Agent': USER_AGENT, Accept: 'text/html', 'Accept-Language': 'it-IT,it' },
       signal: AbortSignal.timeout(5000),
+      redirect: 'error', // don't follow redirects to prevent SSRF
     });
 
     if (!res.ok) {
+      const empty: ReviewData = { rating: null, count: null };
+      REVIEW_CACHE.set(asin, empty);
+      return empty;
+    }
+
+    // Limit response size to 2 MB to prevent memory exhaustion
+    const contentLength = res.headers.get('content-length');
+    if (contentLength && parseInt(contentLength, 10) > 2_097_152) {
       const empty: ReviewData = { rating: null, count: null };
       REVIEW_CACHE.set(asin, empty);
       return empty;

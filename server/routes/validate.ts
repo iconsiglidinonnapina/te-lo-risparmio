@@ -9,6 +9,7 @@ export function validateRoutes(app: FastifyInstance) {
         body: {
           type: 'object',
           required: ['url'],
+          additionalProperties: false,
           properties: {
             url: { type: 'string', maxLength: 2048 },
           },
