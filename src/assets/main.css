@@ -1,1 +1,44 @@
 @import 'tailwindcss';
+
+/*
+ * sr-only: visually hidden but accessible to screen readers.
+ * Tailwind v4 includes this as a utility, but we define the
+ * :focus/:active override for the skip-link pattern.
+ */
+@utility sr-only {
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+
+body {
+  font-family:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    Helvetica,
+    Arial,
+    sans-serif;
+  color: #1f2328;
+  background-color: #f9fafb;
+}
+
+@media (forced-colors: active) {
+  button {
+    border: 2px solid ButtonBorder;
+  }
+
+  input {
+    border: 1px solid ButtonBorder;
+  }
+
+  svg {
+    fill: currentColor;
+    stroke: currentColor;
+  }
+}

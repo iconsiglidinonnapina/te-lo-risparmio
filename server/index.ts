@@ -18,7 +18,7 @@ await app.register(cors, {
 
 // Serve il build frontend in produzione (fallback SPA per vue-router history mode)
 if (config.nodeEnv === 'production') {
-  const clientDir = resolve(import.meta.dirname, '..', 'dist', 'client');
+  const clientDir = resolve(import.meta.dirname, '..', 'client');
   await app.register(fastifyStatic, {
     root: clientDir,
     wildcard: false,
