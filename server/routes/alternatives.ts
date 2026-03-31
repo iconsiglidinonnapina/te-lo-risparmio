@@ -3,6 +3,7 @@ import { getItem, searchAlternatives, CreatorsApiError } from '../services/creat
 import { extractKeywords } from '../services/keyword-extractor.js';
 import { rankAlternatives, type RankedProduct } from '../services/alternative-ranker.js';
 import { buildAffiliateLink } from '../services/affiliate-builder.js';
+import { enrichAllWithReviews } from '../services/review-enricher.js';
 import { TtlCache } from '../services/cache.js';
 
 const ONE_HOUR = 60 * 60 * 1000;
@@ -65,10 +66,13 @@ export function alternativesRoutes(app: FastifyInstance) {
           excludeAsin: asin,
         });
 
-        // 4. Rank and select top 5
-        const ranked = rankAlternatives(rawAlternatives, product.price.amount, 5);
+        // 4. Enrich alternatives with scraped review data (API may not provide it)
+        const enrichedAlternatives = await enrichAllWithReviews(rawAlternatives);
 
-        // 5. Attach affiliate links to each alternative
+        // 5. Rank and select top 5
+        const ranked = rankAlternatives(enrichedAlternatives, product.price.amount, 5);
+
+        // 6. Attach affiliate links to each alternative
         const alternatives = ranked.map((alt) => ({
           ...alt,
           affiliateUrl: buildAffiliateLink(alt.asin),

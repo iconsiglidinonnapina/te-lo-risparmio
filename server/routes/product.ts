@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { getItem, CreatorsApiError, type ProductData } from '../services/creators-api-client.js';
 import { extractKeywords } from '../services/keyword-extractor.js';
 import { buildAffiliateLink } from '../services/affiliate-builder.js';
+import { enrichWithReviews } from '../services/review-enricher.js';
 import { TtlCache } from '../services/cache.js';
 
 const ONE_HOUR = 60 * 60 * 1000;
@@ -31,18 +32,20 @@ export function productRoutes(app: FastifyInstance) {
 
       const cached = productCache.get(asin);
       if (cached) {
-        const keywords = extractKeywords(cached.title);
-        const affiliateUrl = buildAffiliateLink(cached.asin);
-        return { ...cached, keywords, affiliateUrl } satisfies ProductResponse;
+        const enriched = await enrichWithReviews(cached);
+        const keywords = extractKeywords(enriched.title);
+        const affiliateUrl = buildAffiliateLink(enriched.asin);
+        return { ...enriched, keywords, affiliateUrl } satisfies ProductResponse;
       }
 
       try {
         const product = await getItem(asin);
-        productCache.set(asin, product);
+        const enriched = await enrichWithReviews(product);
+        productCache.set(asin, enriched);
 
-        const keywords = extractKeywords(product.title);
-        const affiliateUrl = buildAffiliateLink(product.asin);
-        return { ...product, keywords, affiliateUrl } satisfies ProductResponse;
+        const keywords = extractKeywords(enriched.title);
+        const affiliateUrl = buildAffiliateLink(enriched.asin);
+        return { ...enriched, keywords, affiliateUrl } satisfies ProductResponse;
       } catch (err) {
         if (err instanceof CreatorsApiError) {
           return reply.status(404).send({ error: err.message, code: err.code });
