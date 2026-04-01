@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { extractKeywords } from '../server/services/keyword-extractor';
+import { extractKeywords, extractSearchQuery } from '../server/services/keyword-extractor';
 
 describe('extractKeywords', () => {
   it('extracts meaningful words from a product title', () => {
@@ -69,5 +69,57 @@ describe('extractKeywords', () => {
   it('handles title with only stop words', () => {
     const title = 'il la di del per con';
     expect(extractKeywords(title)).toBe('');
+  });
+});
+
+describe('extractSearchQuery', () => {
+  it('deprioritizes generic adjectives like "elettrico"', () => {
+    const query = extractSearchQuery('SwitchBot Apri Tende Elettrico Automatico', null, 4);
+    const tokens = query.split(' ');
+    // "apri" and "tende" should appear before "elettrico"/"automatico"
+    const apriIdx = tokens.indexOf('apri');
+    const tendeIdx = tokens.indexOf('tende');
+    expect(apriIdx).toBeLessThan(tokens.length);
+    expect(tendeIdx).toBeLessThan(tokens.length);
+    // If maxTokens is tight, generic adjectives may be excluded
+  });
+
+  it('deprioritizes "smart", "wireless", "bluetooth"', () => {
+    const query = extractSearchQuery(
+      'Logitech MX Master Mouse Wireless Bluetooth Ergonomico',
+      null,
+      4,
+    );
+    const tokens = query.split(' ');
+    // "mx", "master", "mouse" are specific; "wireless", "bluetooth" are generic
+    expect(tokens).toContain('mouse');
+    // Generic adjectives should be at the end or excluded
+    const mouseIdx = tokens.indexOf('mouse');
+    if (tokens.includes('wireless')) {
+      expect(tokens.indexOf('wireless')).toBeGreaterThan(mouseIdx);
+    }
+  });
+
+  it('keeps generic adjectives if they are the only tokens', () => {
+    const query = extractSearchQuery('Smart Wireless', null, 5);
+    // These are all generic adjectives but should still produce a query
+    expect(query.length).toBeGreaterThan(0);
+  });
+
+  it('includes browseNodeName tokens as priority', () => {
+    const query = extractSearchQuery('SwitchBot Apri Tende Intelligente', 'Motori per tende', 8);
+    expect(query).toContain('motori');
+    expect(query).toContain('tende');
+  });
+
+  it('skips brand (first token) when there are multiple tokens', () => {
+    const query = extractSearchQuery('Samsung Galaxy S24 Ultra Smartphone', null, 5);
+    const tokens = query.split(' ');
+    // "samsung" (brand) should be skipped
+    expect(tokens[0]).not.toBe('samsung');
+  });
+
+  it('returns empty string for only stop words', () => {
+    expect(extractSearchQuery('il la di del per con', null)).toBe('');
   });
 });

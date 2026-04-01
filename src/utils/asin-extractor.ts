@@ -3,12 +3,21 @@ const ASIN_PATTERN = /(?:\/(?:dp|product|gp\/product))\/([A-Z0-9]{10})(?:[/?#]|$
 const AMAZON_HOST_PATTERN =
   /^(?:www\.)?amazon\.(com|co\.uk|co\.jp|com\.br|com\.au|it|de|fr|es|ca|nl|in|sg|ae|sa|pl|se|be|com\.mx|com\.tr)$/i;
 
-const SHORT_LINK_HOST_PATTERN = /^(?:amzn\.to|amzn\.eu|a\.co)$/i;
+const SHORT_LINK_HOST_PATTERN = /^(?:amzn\.to|amzn\.eu|amzn\.it|a\.co)$/i;
 
 export interface AsinExtractionResult {
   valid: boolean;
   asin: string | null;
   error: string | null;
+}
+
+export function isShortLink(input: string): boolean {
+  try {
+    const url = new URL(maybeAddProtocol(input.trim()));
+    return SHORT_LINK_HOST_PATTERN.test(url.hostname);
+  } catch {
+    return false;
+  }
 }
 
 export function isAmazonUrl(input: string): boolean {
@@ -46,6 +55,16 @@ export function extractAsin(input: string): AsinExtractionResult {
       asin: null,
       error: "L'URL non appartiene ad Amazon",
     };
+  }
+
+  // Short links need server-side resolution — mark as valid with null asin
+  if (SHORT_LINK_HOST_PATTERN.test(url.hostname)) {
+    const match = url.pathname.match(ASIN_PATTERN);
+    if (match?.[1]) {
+      return { valid: true, asin: match[1].toUpperCase(), error: null };
+    }
+    // No ASIN in path — requires server-side redirect resolution
+    return { valid: true, asin: null, error: null };
   }
 
   const match = url.pathname.match(ASIN_PATTERN);

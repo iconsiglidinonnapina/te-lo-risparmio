@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { extractAsin, isAmazonUrl } from '../src/utils/asin-extractor';
+import { extractAsin, isAmazonUrl, isShortLink } from '../src/utils/asin-extractor';
 
 describe('isAmazonUrl', () => {
   it('recognises amazon.it', () => {
@@ -111,5 +111,65 @@ describe('extractAsin', () => {
   it('auto-prepends https:// for www.amazon.* without protocol', () => {
     const result = extractAsin('www.amazon.com/dp/B084K866MQ');
     expect(result).toEqual({ valid: true, asin: 'B084K866MQ', error: null });
+  });
+
+  // Short links: valid with null asin (needs server resolution)
+  it('returns valid with null asin for amzn.eu short link', () => {
+    const result = extractAsin('https://amzn.eu/d/abc1234');
+    expect(result).toEqual({ valid: true, asin: null, error: null });
+  });
+
+  it('returns valid with null asin for amzn.to short link', () => {
+    const result = extractAsin('https://amzn.to/3xYzAbc');
+    expect(result).toEqual({ valid: true, asin: null, error: null });
+  });
+
+  it('returns valid with null asin for a.co short link', () => {
+    const result = extractAsin('https://a.co/d/hK9xAbC');
+    expect(result).toEqual({ valid: true, asin: null, error: null });
+  });
+
+  it('returns valid with null asin for amzn.it short link', () => {
+    const result = extractAsin('https://amzn.it/d/abc1234');
+    expect(result).toEqual({ valid: true, asin: null, error: null });
+  });
+
+  it('extracts ASIN from short link host with /dp/ path', () => {
+    const result = extractAsin('https://amzn.eu/dp/B084K866MQ');
+    expect(result).toEqual({ valid: true, asin: 'B084K866MQ', error: null });
+  });
+});
+
+describe('isShortLink', () => {
+  it('detects amzn.eu as short link', () => {
+    expect(isShortLink('https://amzn.eu/d/abc1234')).toBe(true);
+  });
+
+  it('detects amzn.to as short link', () => {
+    expect(isShortLink('https://amzn.to/3xYzAbc')).toBe(true);
+  });
+
+  it('detects a.co as short link', () => {
+    expect(isShortLink('https://a.co/d/hK9xAbC')).toBe(true);
+  });
+
+  it('detects amzn.it as short link', () => {
+    expect(isShortLink('https://amzn.it/d/abc1234')).toBe(true);
+  });
+
+  it('returns false for full Amazon URLs', () => {
+    expect(isShortLink('https://www.amazon.it/dp/B084K866MQ')).toBe(false);
+  });
+
+  it('returns false for non-Amazon URLs', () => {
+    expect(isShortLink('https://www.ebay.com/itm/12345')).toBe(false);
+  });
+
+  it('returns false for invalid input', () => {
+    expect(isShortLink('not a url')).toBe(false);
+  });
+
+  it('handles input without protocol', () => {
+    expect(isShortLink('amzn.eu/d/abc1234')).toBe(true);
   });
 });

@@ -1,9 +1,11 @@
 import { ref, computed } from 'vue';
-import { extractAsin, type AsinExtractionResult } from '@/utils/asin-extractor';
+import { extractAsin, isShortLink, type AsinExtractionResult } from '@/utils/asin-extractor';
 
 export function useUrlValidation() {
   const url = ref('');
   const submitted = ref(false);
+
+  const isShortLinkUrl = computed(() => isShortLink(url.value));
 
   const result = computed<AsinExtractionResult>(() => extractAsin(url.value));
 
@@ -27,6 +29,7 @@ export function useUrlValidation() {
     url,
     submitted,
     result,
+    isShortLinkUrl,
     showError,
     showSuccess,
     validate,

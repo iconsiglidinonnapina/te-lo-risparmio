@@ -7,8 +7,8 @@ import ErrorState from '@/components/ErrorState.vue';
 
 const store = useAnalysisStore();
 
-function handleSubmit(asin: string) {
-  void store.analyze(asin);
+function handleSubmit(asin: string, shortLinkUrl?: string) {
+  void store.analyze(asin, shortLinkUrl);
 }
 
 function handleReset() {

@@ -111,7 +111,7 @@ describe('rankAlternatives', () => {
 
     const result = rankAlternatives([noReviews], 10);
     expect(result).toHaveLength(1);
-    expect(result[0]!.score).toBe(0 + 0 - 1); // 0*2 + log(0→0) - 10/10
+    expect(result[0]!.score).toBe(0 + 0 - 1); // 0*3 + 0*2 + log(0→0) - 10/10
   });
 
   it('handles product with null price (defaults to referencePrice)', () => {
@@ -124,7 +124,41 @@ describe('rankAlternatives', () => {
 
     const result = rankAlternatives([noPrice], 10);
     expect(result).toHaveLength(1);
-    // price defaults to referencePrice → priceSignal = 1
+    // price defaults to referencePrice → priceSignal = 1, no relevance score
+    const expected = 4.0 * 2 + Math.log(100) - 1;
+    expect(result[0]!.score).toBeCloseTo(expected, 5);
+  });
+
+  it('boosts products with high relevance score', () => {
+    const highRelevance = makeProduct({
+      asin: 'HIGH_REL',
+      reviewRating: 3.5,
+      reviewCount: 80,
+      price: { amount: 10, currency: 'EUR', displayAmount: '10,00 €' },
+    });
+    const lowRelevance = makeProduct({
+      asin: 'LOW_REL',
+      reviewRating: 4.0,
+      reviewCount: 100,
+      price: { amount: 10, currency: 'EUR', displayAmount: '10,00 €' },
+    });
+
+    const relevanceScores = new Map([
+      ['HIGH_REL', 0.9],
+      ['LOW_REL', 0.0],
+    ]);
+
+    const result = rankAlternatives([lowRelevance, highRelevance], 10, 5, relevanceScores);
+
+    // Despite slightly lower rating/reviews, HIGH_REL should rank first due to strong relevance
+    expect(result[0]!.asin).toBe('HIGH_REL');
+  });
+
+  it('works without relevanceScores (backward compatible)', () => {
+    const product = makeProduct({ asin: 'COMPAT' });
+    const result = rankAlternatives([product], 10, 5);
+    expect(result).toHaveLength(1);
+    // Without relevance, relevance signal = 0
     const expected = 4.0 * 2 + Math.log(100) - 1;
     expect(result[0]!.score).toBeCloseTo(expected, 5);
   });

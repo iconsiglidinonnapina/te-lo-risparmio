@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { getItem, searchAlternatives, CreatorsApiError } from '../services/creators-api-client.js';
 import { extractSearchQuery } from '../services/keyword-extractor.js';
 import { rankAlternatives, type RankedProduct } from '../services/alternative-ranker.js';
+import { filterByRelevance } from '../services/relevance-filter.js';
 import { buildAffiliateLink } from '../services/affiliate-builder.js';
 import { enrichAllWithReviews } from '../services/review-enricher.js';
 import { TtlCache } from '../services/cache.js';
@@ -69,10 +70,25 @@ export function alternativesRoutes(app: FastifyInstance) {
         // 4. Enrich alternatives with scraped review data (API may not provide it)
         const enrichedAlternatives = await enrichAllWithReviews(rawAlternatives);
 
-        // 5. Rank and select top 5
-        const ranked = rankAlternatives(enrichedAlternatives, product.price.amount, 5);
+        // 5. Filter by semantic relevance to remove unrelated products
+        const relevanceResults = filterByRelevance(product.title, enrichedAlternatives);
 
-        // 6. Attach affiliate links to each alternative
+        // Build relevance score map for the ranker
+        const relevanceScores = new Map<string, number>();
+        const filteredAlternatives = relevanceResults.map((r) => {
+          relevanceScores.set(r.product.asin, r.relevance.similarity);
+          return r.product;
+        });
+
+        // 6. Rank and select top 5 (now with relevance integrated)
+        const ranked = rankAlternatives(
+          filteredAlternatives,
+          product.price.amount,
+          5,
+          relevanceScores,
+        );
+
+        // 7. Attach affiliate links to each alternative
         const alternatives = ranked.map((alt) => ({
           ...alt,
           affiliateUrl: buildAffiliateLink(alt.asin),

@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify';
-import { extractAsin } from '../services/asin-extractor.js';
+import { extractAsin, isShortLink, resolveShortLink } from '../services/asin-extractor.js';
 
 export function validateRoutes(app: FastifyInstance) {
   app.post<{ Body: { url: string } }>(
@@ -34,6 +34,18 @@ export function validateRoutes(app: FastifyInstance) {
     },
     async (request, reply) => {
       const { url } = request.body;
+
+      // Short links require server-side redirect resolution
+      if (isShortLink(url)) {
+        const resolved = await resolveShortLink(url);
+        if (!resolved.valid || !resolved.asin) {
+          return reply
+            .status(400)
+            .send({ valid: false, error: resolved.error ?? 'Impossibile risolvere il link breve' });
+        }
+        return { valid: true, asin: resolved.asin };
+      }
+
       const result = extractAsin(url);
 
       if (!result.valid) {

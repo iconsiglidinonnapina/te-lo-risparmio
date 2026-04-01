@@ -19,7 +19,22 @@ export const useAnalysisStore = defineStore('analysis', () => {
   const evaluation = ref<PriceEvaluation | null>(null);
   const error = ref<string | null>(null);
 
-  async function analyze(asin: string) {
+  /**
+   * Resolves a short Amazon link (amzn.eu, amzn.to, etc.) to an ASIN
+   * via the backend validation endpoint.
+   */
+  async function resolveShortLink(url: string): Promise<string> {
+    const data = await apiFetch<{ valid: boolean; asin: string }>('/api/validate-link', {
+      method: 'POST',
+      body: JSON.stringify({ url }),
+    });
+    if (!data.valid || !data.asin) {
+      throw new Error('Impossibile risolvere il link breve');
+    }
+    return data.asin;
+  }
+
+  async function analyze(asin: string, shortLinkUrl?: string) {
     appState.value = 'loading';
     error.value = null;
     product.value = null;
@@ -27,16 +42,27 @@ export const useAnalysisStore = defineStore('analysis', () => {
     evaluation.value = null;
 
     try {
+      // If we have a short link URL without an ASIN, resolve it first
+      let resolvedAsin = asin;
+      if (!resolvedAsin && shortLinkUrl) {
+        loadingStep.value = 'resolving-link';
+        resolvedAsin = await resolveShortLink(shortLinkUrl);
+      }
+
+      if (!resolvedAsin) {
+        throw new Error('Impossibile determinare il prodotto dal link fornito');
+      }
+
       loadingStep.value = 'fetching-product';
       const productData = await apiFetch<ProductResponse>(
-        `/api/product/${encodeURIComponent(asin)}`,
+        `/api/product/${encodeURIComponent(resolvedAsin)}`,
       );
       product.value = productData;
 
       loadingStep.value = 'fetching-alternatives';
       try {
         const altData = await apiFetch<AlternativesResponse>(
-          `/api/alternatives/${encodeURIComponent(asin)}`,
+          `/api/alternatives/${encodeURIComponent(resolvedAsin)}`,
         );
         alternatives.value = altData.alternatives;
       } catch {

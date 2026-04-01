@@ -6,6 +6,7 @@ defineProps<{
 }>();
 
 const steps: { key: LoadingStep; label: string }[] = [
+  { key: 'resolving-link', label: 'Risoluzione link in corso…' },
   { key: 'fetching-product', label: 'Recupero dati prodotto…' },
   { key: 'fetching-alternatives', label: 'Ricerca alternative…' },
 ];

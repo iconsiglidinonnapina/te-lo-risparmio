@@ -3,10 +3,10 @@ import { ref } from 'vue';
 import { useUrlValidation } from '@/composables/useUrlValidation';
 
 const emit = defineEmits<{
-  submit: [asin: string];
+  submit: [asin: string, shortLinkUrl?: string];
 }>();
 
-const { url, result, showError, showSuccess, validate } = useUrlValidation();
+const { url, result, isShortLinkUrl, showError, showSuccess, validate } = useUrlValidation();
 
 const inputRef = ref<HTMLInputElement | null>(null);
 
@@ -14,6 +14,9 @@ function handleSubmit() {
   const validation = validate();
   if (validation.valid && validation.asin) {
     emit('submit', validation.asin);
+  } else if (validation.valid && !validation.asin && isShortLinkUrl.value) {
+    // Short link without extractable ASIN — needs server-side resolution
+    emit('submit', '', url.value.trim());
   } else {
     inputRef.value?.focus();
   }

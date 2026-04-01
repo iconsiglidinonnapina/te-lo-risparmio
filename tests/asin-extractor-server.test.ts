@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { extractAsin } from '../server/services/asin-extractor.js';
+import { extractAsin, isShortLink } from '../server/services/asin-extractor.js';
 
 describe('server/asin-extractor — extractAsin', () => {
   // ── Valid URLs ──────────────────────────────────────────
@@ -176,5 +176,39 @@ describe('server/asin-extractor — extractAsin', () => {
   it('does not prepend protocol for non-Amazon domains', () => {
     const r = extractAsin('ebay.com/itm/12345');
     expect(r.valid).toBe(false);
+  });
+});
+
+describe('server/asin-extractor — isShortLink', () => {
+  it('detects amzn.eu as short link', () => {
+    expect(isShortLink('https://amzn.eu/d/abc1234')).toBe(true);
+  });
+
+  it('detects amzn.to as short link', () => {
+    expect(isShortLink('https://amzn.to/3xYzAbc')).toBe(true);
+  });
+
+  it('detects a.co as short link', () => {
+    expect(isShortLink('https://a.co/d/hK9xAbC')).toBe(true);
+  });
+
+  it('detects amzn.it as short link', () => {
+    expect(isShortLink('https://amzn.it/d/abc1234')).toBe(true);
+  });
+
+  it('returns false for full Amazon URLs', () => {
+    expect(isShortLink('https://www.amazon.it/dp/B084K866MQ')).toBe(false);
+  });
+
+  it('returns false for non-Amazon URLs', () => {
+    expect(isShortLink('https://www.ebay.com/itm/12345')).toBe(false);
+  });
+
+  it('returns false for invalid input', () => {
+    expect(isShortLink('not a url')).toBe(false);
+  });
+
+  it('handles input without protocol', () => {
+    expect(isShortLink('amzn.eu/d/abc1234')).toBe(true);
   });
 });

@@ -62,4 +62,4 @@ export interface PriceEvaluation {
 
 export type AppState = 'input' | 'loading' | 'result' | 'error';
 
-export type LoadingStep = 'fetching-product' | 'fetching-alternatives';
+export type LoadingStep = 'resolving-link' | 'fetching-product' | 'fetching-alternatives';
