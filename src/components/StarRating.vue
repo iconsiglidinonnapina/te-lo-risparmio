@@ -28,7 +28,7 @@ const ariaLabel = computed(() => {
         :key="i"
         xmlns="http://www.w3.org/2000/svg"
         class="h-4 w-4"
-        :class="i <= filledStars ? 'text-amber-400' : 'text-gray-300 dark:text-gray-600'"
+        :class="i <= filledStars ? 'text-teal-500' : 'text-gray-300 dark:text-gray-600'"
         viewBox="0 0 20 20"
         fill="currentColor"
       >

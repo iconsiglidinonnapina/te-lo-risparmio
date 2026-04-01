@@ -25,7 +25,7 @@ function scrollBy(direction: -1 | 1) {
       <div class="hidden gap-1 sm:flex" aria-hidden="true">
         <button
           type="button"
-          class="cursor-pointer rounded-full border border-gray-300 p-1.5 text-gray-500 transition-colors hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-offset-2 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 dark:focus:ring-offset-gray-950"
+          class="rounded-full border border-gray-300 p-1.5 text-gray-500 transition-colors hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-offset-2 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 dark:focus:ring-offset-gray-950"
           aria-label="Scorri a sinistra"
           @click="scrollBy(-1)"
         >
@@ -44,7 +44,7 @@ function scrollBy(direction: -1 | 1) {
         </button>
         <button
           type="button"
-          class="cursor-pointer rounded-full border border-gray-300 p-1.5 text-gray-500 transition-colors hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-offset-2 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 dark:focus:ring-offset-gray-950"
+          class="rounded-full border border-gray-300 p-1.5 text-gray-500 transition-colors hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-offset-2 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 dark:focus:ring-offset-gray-950"
           aria-label="Scorri a destra"
           @click="scrollBy(1)"
         >
@@ -75,15 +75,31 @@ function scrollBy(direction: -1 | 1) {
         v-for="alt in alternatives"
         :key="alt.asin"
         role="listitem"
-        class="w-48 shrink-0 snap-start rounded-xl border border-gray-200 bg-white p-3 shadow-sm transition-shadow hover:shadow-md dark:border-gray-800 dark:bg-gray-950 sm:w-52"
+        class="w-48 shrink-0 snap-start rounded-xl border border-gray-200 bg-white p-3 shadow-sm transition-shadow hover:shadow-md dark:border-gray-800 dark:bg-[#141414] sm:w-52"
       >
-        <div v-if="alt.imageUrl" class="flex h-32 items-center justify-center">
+        <div class="flex h-32 items-center justify-center rounded-lg bg-gray-100 dark:bg-[#1a1a1a]">
           <img
+            v-if="alt.imageUrl"
             :src="alt.imageUrl"
             :alt="alt.title"
             class="max-h-32 w-auto rounded object-contain"
             loading="lazy"
           />
+          <svg
+            v-else
+            class="h-10 w-10 text-gray-300 dark:text-gray-600"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            aria-hidden="true"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0 0 22.5 18.75V5.25A2.25 2.25 0 0 0 20.25 3H3.75A2.25 2.25 0 0 0 1.5 5.25v13.5A2.25 2.25 0 0 0 3.75 21Z"
+            />
+          </svg>
         </div>
 
         <h4 class="mt-2 line-clamp-2 text-sm font-medium text-gray-900 dark:text-gray-100">
@@ -102,7 +118,7 @@ function scrollBy(direction: -1 | 1) {
           :href="alt.affiliateUrl"
           target="_blank"
           rel="noopener noreferrer"
-          class="mt-3 inline-flex w-full items-center justify-center gap-1 rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 dark:focus:ring-offset-gray-950"
+          class="mt-3 inline-flex w-full items-center justify-center gap-1 rounded-lg bg-[#FF9900] px-3 py-1.5 text-xs font-medium text-[#111] transition-colors hover:bg-[#E68A00] focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 dark:focus:ring-offset-gray-950"
         >
           Vedi su Amazon
           <svg

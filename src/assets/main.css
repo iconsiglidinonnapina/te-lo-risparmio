@@ -17,6 +17,47 @@
   width: 1px;
 }
 
+/* Highlight box effect for title word */
+.highlight-box {
+  position: relative;
+  display: inline-block;
+  color: #0d9488;
+}
+
+.highlight-box::before {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: -8px;
+  right: -8px;
+  bottom: -4px;
+  border: 2px solid #0d9488;
+  border-radius: 4px;
+  transform: rotate(-4deg);
+  pointer-events: none;
+}
+
+.dark .highlight-box {
+  color: #14b8a6;
+}
+
+.dark .highlight-box::before {
+  border-color: #14b8a6;
+}
+
+/* Decorative cursor SVG pseudo-element */
+.highlight-box::after {
+  content: '';
+  position: absolute;
+  bottom: -26px;
+  right: -32px;
+  width: 36px;
+  height: 36px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 28'%3E%3Cpath d='M2 1L3.5 21L8.5 16L13 24L16 22.5L11.5 14.5L18 13L2 1Z' fill='white' stroke='%23222' stroke-width='1.2' stroke-linejoin='round'/%3E%3C/svg%3E")
+    no-repeat center/contain;
+  pointer-events: none;
+}
+
 body {
   font-family:
     system-ui,
@@ -30,13 +71,33 @@ body {
   background-color: #f9fafb;
 }
 
+/* Smooth transition for dark/light mode changes */
+* {
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease,
+    border-color 0.3s ease;
+}
+
+button,
+[role='button'],
+a,
+select,
+summary {
+  cursor: pointer;
+}
+
 .dark body,
 body:where(.dark *) {
   color: #e5e7eb;
-  background-color: #0c0c12;
+  background-color: #0a0a0a;
+  --bg-card: #141414;
+  --bg-surface: #1a1a1a;
+  --bg-input: #1e1e1e;
+  --border-subtle: rgba(148, 163, 184, 0.1);
 }
 
-/* Carousel — touch-friendly scroll snap */
+/* Carousel — touch-friendly horizontal scroll snap */
 .carousel {
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;

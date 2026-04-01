@@ -71,13 +71,17 @@ export function evaluatePrice(
   const savingsPct = product.savingsPercentage;
 
   let vsAltPct: number | null = null;
+  let avgAltPrice: number | null = null;
+  let cheapestAltPrice: number | null = null;
+
   if (product.price && alternatives.length > 0) {
     const altPrices = alternatives
       .map((a) => a.price?.amount)
       .filter((p): p is number => p !== undefined && p !== null);
 
     if (altPrices.length > 0) {
-      const avgAltPrice = altPrices.reduce((sum, p) => sum + p, 0) / altPrices.length;
+      avgAltPrice = altPrices.reduce((sum, p) => sum + p, 0) / altPrices.length;
+      cheapestAltPrice = Math.min(...altPrices);
       vsAltPct =
         avgAltPrice > 0 ? ((avgAltPrice - product.price.amount) / avgAltPrice) * 100 : null;
     }
@@ -85,11 +89,43 @@ export function evaluatePrice(
 
   const color = decide(savingsPct, vsAltPct);
 
+  // Build priceBars if we have the necessary data
+  let priceBars = null;
+  if (product.price) {
+    priceBars = {
+      currentPrice: {
+        amount: product.price.amount,
+        displayAmount: product.price.displayAmount,
+      },
+      averageAlternativePrice:
+        avgAltPrice !== null
+          ? {
+              amount: avgAltPrice,
+              displayAmount: new Intl.NumberFormat('it-IT', {
+                style: 'currency',
+                currency: product.price.currency,
+              }).format(avgAltPrice),
+            }
+          : null,
+      cheapestAlternativePrice:
+        cheapestAltPrice !== null
+          ? {
+              amount: cheapestAltPrice,
+              displayAmount: new Intl.NumberFormat('it-IT', {
+                style: 'currency',
+                currency: product.price.currency,
+              }).format(cheapestAltPrice),
+            }
+          : null,
+    };
+  }
+
   return {
     color,
     label: LABELS[color],
     explanation: buildExplanation(savingsPct, vsAltPct),
     savingsPct,
     vsAlternativesPct: vsAltPct !== null ? Math.round(vsAltPct * 100) / 100 : null,
+    priceBars,
   };
 }

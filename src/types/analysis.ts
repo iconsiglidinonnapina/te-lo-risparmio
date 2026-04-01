@@ -45,12 +45,19 @@ export interface AlternativesResponse {
 
 export type SignalColor = 'green' | 'yellow' | 'red';
 
+export interface PriceBars {
+  currentPrice: { amount: number; displayAmount: string } | null;
+  averageAlternativePrice: { amount: number; displayAmount: string } | null;
+  cheapestAlternativePrice: { amount: number; displayAmount: string } | null;
+}
+
 export interface PriceEvaluation {
   color: SignalColor;
   label: string;
   explanation: string;
   savingsPct: number | null;
   vsAlternativesPct: number | null;
+  priceBars: PriceBars | null;
 }
 
 export type AppState = 'input' | 'loading' | 'result' | 'error';

@@ -21,66 +21,62 @@ function handleSubmit() {
 </script>
 
 <template>
-  <form class="w-full max-w-2xl mx-auto" novalidate @submit.prevent="handleSubmit">
-    <div class="space-y-2">
-      <label for="amazon-url" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-        Link prodotto Amazon
-      </label>
+  <div class="w-full max-w-150 mx-auto">
+    <label
+      for="amazon-url"
+      class="mb-2 block text-center text-sm font-medium text-gray-500 dark:text-gray-400"
+    >
+      Link prodotto Amazon
+    </label>
 
-      <div class="flex gap-3">
-        <div class="relative flex-1">
-          <input
-            id="amazon-url"
-            ref="inputRef"
-            v-model="url"
-            type="url"
-            inputmode="url"
-            autocomplete="url"
-            placeholder="https://www.amazon.it/dp/B084K866MQ"
-            :aria-invalid="showError ? 'true' : undefined"
-            :aria-describedby="showError ? 'url-error' : showSuccess ? 'url-success' : 'url-hint'"
-            class="block w-full rounded-lg border px-4 py-3 text-base outline-none transition-colors focus:ring-2 dark:bg-gray-950 dark:text-gray-100 dark:placeholder-gray-500"
-            :class="[
-              showError
-                ? 'border-red-500 focus:border-red-500 focus:ring-red-200 dark:focus:ring-red-900'
-                : showSuccess
-                  ? 'border-green-500 focus:border-green-500 focus:ring-green-200 dark:focus:ring-green-900'
-                  : 'border-gray-300 focus:border-teal-500 focus:ring-teal-200 dark:border-gray-600 dark:focus:border-teal-400 dark:focus:ring-teal-900',
-            ]"
-          />
+    <form novalidate @submit.prevent="handleSubmit">
+      <div
+        class="flex overflow-hidden rounded-xl border-[1.5px] bg-white dark:bg-[#1a1a1a]"
+        :class="[
+          showError
+            ? 'border-red-500 shadow-[0_0_0_3px_rgba(239,68,68,0.15)]'
+            : showSuccess
+              ? 'border-green-500 shadow-[0_0_0_3px_rgba(34,197,94,0.15)]'
+              : 'border-gray-300 focus-within:border-teal-500 focus-within:shadow-[0_0_0_3px_rgba(20,184,166,0.15)] dark:border-[rgba(148,163,184,0.1)]',
+        ]"
+      >
+        <!-- Input -->
+        <input
+          id="amazon-url"
+          ref="inputRef"
+          v-model="url"
+          type="url"
+          inputmode="url"
+          autocomplete="url"
+          placeholder="https://www.amazon.it/dp/B084K866MQ"
+          :aria-invalid="showError ? 'true' : undefined"
+          :aria-describedby="showError ? 'url-error' : showSuccess ? 'url-success' : 'url-hint'"
+          class="flex-1 border-0 bg-transparent px-4 py-3.5 text-[15px] text-gray-900 outline-none placeholder:text-gray-400 dark:text-gray-100 dark:placeholder:text-gray-500"
+        />
 
-          <span
-            v-if="showSuccess"
-            class="absolute right-3 top-1/2 -translate-y-1/2 text-green-600 dark:text-green-400"
-            aria-hidden="true"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-5 w-5"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
-              <path
-                fill-rule="evenodd"
-                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                clip-rule="evenodd"
-              />
-            </svg>
-          </span>
-        </div>
-
+        <!-- Submit button -->
         <button
           type="submit"
-          class="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-teal-600 px-6 py-3 text-base font-medium text-white transition-colors hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-offset-2 dark:bg-teal-500 dark:hover:bg-teal-600 dark:focus:ring-offset-gray-950"
+          class="flex items-center gap-1.5 border-0 bg-teal-500 px-7 text-sm font-semibold text-black transition-colors hover:bg-teal-600 focus:outline-none"
         >
           Analizza
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path
+              d="M1 7h12M9 3l4 4-4 4"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
         </button>
       </div>
 
+      <!-- Helper text -->
       <p
         v-if="showError"
         id="url-error"
-        class="text-sm text-red-600 dark:text-red-400"
+        class="mt-2 text-center text-xs text-red-600 dark:text-red-400"
         role="alert"
       >
         {{ result.error }}
@@ -89,14 +85,14 @@ function handleSubmit() {
       <p
         v-else-if="showSuccess"
         id="url-success"
-        class="text-sm text-green-700 dark:text-green-400"
+        class="mt-2 text-center text-xs text-green-600 dark:text-green-400"
       >
-        Prodotto trovato: ASIN <strong>{{ result.asin }}</strong>
+        Prodotto trovato!
       </p>
 
-      <p v-else id="url-hint" class="text-sm text-gray-500 dark:text-gray-400">
+      <p v-else id="url-hint" class="mt-2.5 text-center text-xs text-gray-500 dark:text-gray-500">
         Incolla il link di un prodotto Amazon per analizzarne il prezzo
       </p>
-    </div>
-  </form>
+    </form>
+  </div>
 </template>
