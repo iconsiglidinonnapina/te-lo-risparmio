@@ -27,7 +27,7 @@ function goHomeAndReset() {
     <!-- Brand -->
     <button type="button" class="flex shrink-0 items-center gap-2" @click="goHomeAndReset">
       <span class="text-[15px] font-semibold whitespace-nowrap text-gray-900 dark:text-gray-100"
-        >Prezzo Giusto</span
+        >Te lo risparmio</span
       >
     </button>
 

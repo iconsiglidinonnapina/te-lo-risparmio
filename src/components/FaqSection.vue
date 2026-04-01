@@ -12,37 +12,55 @@ const faqs = ref<FaqItem[]>([
     id: 1,
     question: "Come funziona l'analisi del prezzo?",
     answer:
-      'Recuperiamo le informazioni del prodotto Amazon tramite le API ufficiali di Amazon e confrontiamo il prezzo attuale con il prezzo di listino. Cerchiamo anche prodotti alternativi nella stessa categoria per darti un quadro completo: se il prezzo è in linea con le alternative o se ci sono opzioni migliori.',
+      "Quando inserisci un link Amazon, recuperiamo le informazioni del prodotto tramite le API ufficiali di Amazon. L'analisi si basa su due fattori concreti: (1) lo sconto rispetto al prezzo di listino, cioè la differenza tra il prezzo attuale e il prezzo originale dichiarato da Amazon; (2) il confronto con la media dei prezzi di prodotti alternativi trovati nella stessa categoria Amazon. Combinando questi due dati, il sistema assegna un verdetto visivo tramite un semaforo (verde, giallo, rosso). Non disponiamo di uno storico dei prezzi: il confronto avviene esclusivamente tra dati disponibili al momento della ricerca.",
   },
   {
     id: 2,
-    question: 'Cosa significa "più caro della media delle alternative"?',
+    question: 'Cosa significano i colori del semaforo?',
     answer:
-      'Oltre al prezzo del singolo prodotto, cerchiamo prodotti simili nella stessa categoria Amazon. Calcoliamo la media dei prezzi delle alternative trovate. Se il tuo prodotto costa di più, ti mostriamo la percentuale di differenza per aiutarti a decidere.',
+      'Verde (Ottimo prezzo): il prodotto ha uno sconto significativo rispetto al listino (almeno 20%) e non risulta più caro delle alternative, oppure è almeno il 15% più economico della media delle alternative. Giallo (Prezzo nella media): il prodotto non presenta né un grande sconto né un prezzo particolarmente elevato rispetto alle alternative. Rosso (Prezzo alto): il prodotto non ha uno sconto rilevante ed è sensibilmente più caro della media delle alternative trovate (almeno il 10% in più). Questi valori sono soglie indicative pensate per orientarti, non giudizi assoluti.',
   },
   {
     id: 3,
-    question: 'Come vengono scelte le alternative?',
+    question: 'Cosa significa "più caro della media delle alternative"?',
     answer:
-      'Le alternative vengono cercate nella stessa categoria merceologica del prodotto, usando parole chiave estratte dal titolo. Ogni alternativa viene classificata in base a un punteggio che tiene conto di: valutazione stelle, numero di recensioni e rapporto prezzo. Ti mostriamo le 5 migliori.',
+      'Quando cerchiamo alternative, raccogliamo i prezzi di prodotti simili nella stessa categoria Amazon. Calcoliamo la media aritmetica di questi prezzi. Se il prodotto che stai analizzando costa di più rispetto a questa media, ti mostriamo la percentuale di differenza. È importante sapere che le alternative non sono necessariamente prodotti identici: possono differire per marca, caratteristiche o qualità. Questo dato serve come indicazione di mercato, non come confronto diretto tra prodotti equivalenti. Ti consigliamo sempre di valutare le alternative proposte leggendo le specifiche e le recensioni.',
   },
   {
     id: 4,
-    question: 'Quali siti Amazon sono supportati?',
+    question: 'Come vengono scelte le alternative?',
     answer:
-      'Attualmente il servizio è ottimizzato per Amazon Italia (amazon.it). Puoi incollare direttamente il link del prodotto che ti interessa, anche in formato compresso (link corti).',
+      'Le alternative vengono cercate nella stessa categoria merceologica del prodotto, usando parole chiave estratte automaticamente dal titolo. Ogni alternativa viene classificata con un punteggio interno che tiene conto di: valutazione in stelle, numero di recensioni e rapporto qualità-prezzo. Ti mostriamo le 5 migliori. Tuttavia, la ricerca automatica ha dei limiti: le alternative potrebbero includere prodotti di fascia diversa o con caratteristiche differenti. Per questo motivo le presentiamo come suggerimenti da valutare, non come sostituti garantiti.',
   },
   {
     id: 5,
-    question: 'È davvero gratuito?',
+    question: 'Il prezzo di listino mostrato è affidabile?',
     answer:
-      'Sì, il servizio è completamente gratuito e non richiede registrazione. Ci sosteniamo tramite il programma di affiliazione Amazon: se acquisti tramite i nostri link, riceviamo una piccola commissione senza costi aggiuntivi per te.',
+      'Il prezzo di listino e la percentuale di sconto provengono direttamente da Amazon tramite le sue API ufficiali. Noi li riportiamo così come Amazon li comunica, senza modificarli. Tieni presente che il prezzo di listino corrisponde al prezzo consigliato dal produttore o al prezzo originale indicato da Amazon, e non è necessariamente il prezzo a cui il prodotto è stato venduto in precedenza. In alcuni casi Amazon potrebbe mostrare un listino che non riflette il reale valore di mercato del prodotto.',
   },
   {
     id: 6,
-    question: 'Ogni quanto vengono aggiornati i prezzi?',
+    question: 'Da dove provengono i dati?',
     answer:
-      "I prezzi vengono recuperati in tempo reale al momento dell'analisi tramite le API ufficiali di Amazon. Ogni analisi ti fornisce dati aggiornati al momento della ricerca.",
+      "Tutti i dati (prezzo, prezzo di listino, sconto, recensioni, immagini, alternative) provengono dalle API ufficiali di Amazon. Non raccogliamo dati da fonti terze né effettuiamo scraping. I dati vengono recuperati in tempo reale al momento dell'analisi, quindi riflettono la situazione su Amazon nell'istante in cui effettui la ricerca. Non conserviamo uno storico dei prezzi.",
+  },
+  {
+    id: 7,
+    question: 'Quali siti Amazon sono supportati?',
+    answer:
+      'Attualmente il servizio è ottimizzato per Amazon Italia (amazon.it). Puoi incollare il link del prodotto in qualsiasi formato: link completi, link compressi (amzn.to, amzn.eu, a.co) e link condivisi dalle app Amazon.',
+  },
+  {
+    id: 8,
+    question: 'È davvero gratuito? Come vi sostenete?',
+    answer:
+      "Sì, il servizio è completamente gratuito e non richiede registrazione. Ci sosteniamo tramite il programma di affiliazione Amazon: i link verso Amazon presenti nei risultati (sia per il prodotto analizzato sia per le alternative) contengono un codice affiliato. Se effettui un acquisto tramite questi link, Amazon ci riconosce una piccola commissione. Questo non comporta alcun costo aggiuntivo per te e non influenza in alcun modo l'analisi del prezzo o la selezione delle alternative: il verdetto del semaforo e il punteggio delle alternative sono calcolati con criteri oggettivi e trasparenti.",
+  },
+  {
+    id: 9,
+    question: "L'analisi può sostituire una valutazione personale?",
+    answer:
+      "No. L'analisi è uno strumento orientativo che ti fornisce dati oggettivi per prendere una decisione più informata. Tuttavia, non può tenere conto di fattori soggettivi come le tue esigenze specifiche, la preferenza per un brand, la qualità percepita o le condizioni di garanzia. Ti consigliamo di usare il nostro strumento come punto di partenza e di leggere sempre le recensioni e le specifiche del prodotto prima di acquistare.",
   },
 ]);
 

@@ -148,7 +148,8 @@ const mockEvaluation: PriceEvaluation = {
           Analizziamo il prezzo
         </h2>
         <p class="text-[13px] leading-relaxed text-gray-600 dark:text-gray-400">
-          Confrontiamo il prezzo attuale con lo storico e con le alternative disponibili.
+          Confrontiamo il prezzo attuale con il prezzo di listino e con la media delle alternative
+          disponibili nella stessa categoria.
         </p>
       </div>
 
