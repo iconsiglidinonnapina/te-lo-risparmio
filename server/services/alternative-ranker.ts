@@ -19,7 +19,7 @@ export interface RankedProduct extends ProductData {
 export function rankAlternatives(
   alternatives: ProductData[],
   referencePrice: number,
-  topN = 5,
+  topN = 10,
   relevanceScores?: Map<string, number>,
 ): RankedProduct[] {
   if (referencePrice <= 0) return [];

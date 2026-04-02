@@ -65,6 +65,10 @@ const hasPriceBars = computed(() => {
   );
 });
 
+const explanationParts = computed(() => {
+  return props.evaluation.explanation.split('. ').filter(Boolean);
+});
+
 // Determine dynamic bar colors based on price values
 const barColors = computed(() => {
   const bars = props.evaluation.priceBars;
@@ -137,7 +141,11 @@ const barColors = computed(() => {
         <p id="traffic-light-label" class="text-lg font-bold uppercase" :class="labelColor">
           {{ evaluation.label }}
         </p>
-        <p class="mt-1 text-sm text-gray-700 dark:text-gray-300">{{ evaluation.explanation }}</p>
+        <ul class="mt-2 list-disc space-y-1 pl-5 text-sm text-gray-700 dark:text-gray-300">
+          <li v-for="(part, idx) in explanationParts" :key="idx">
+            {{ part.endsWith('.') ? part : `${part}.` }}
+          </li>
+        </ul>
       </div>
     </div>
 

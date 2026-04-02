@@ -80,11 +80,11 @@ export function alternativesRoutes(app: FastifyInstance) {
           return r.product;
         });
 
-        // 6. Rank and select top 5 (now with relevance integrated)
+        // 6. Rank and select top 10 (now with relevance integrated)
         const ranked = rankAlternatives(
           filteredAlternatives,
           product.price.amount,
-          5,
+          10,
           relevanceScores,
         );
 

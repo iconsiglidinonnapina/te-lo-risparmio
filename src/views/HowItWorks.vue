@@ -94,7 +94,7 @@ const mockEvaluation: PriceEvaluation = {
   color: 'red',
   label: 'Prezzo alto',
   explanation:
-    'Sconto del 27% rispetto al prezzo di listino. Tuttavia costa il 53% in più delle alternative.',
+    "Buon sconto del 27% rispetto al prezzo di listino. Nettamente più caro delle alternative (53%). Costa più del doppio dell'alternativa più economica",
   savingsPct: 27,
   vsAlternativesPct: -53,
   priceBars: {
@@ -184,9 +184,9 @@ const mockEvaluation: PriceEvaluation = {
     </h2>
 
     <div class="space-y-6">
-      <ProductCard :product="mockProduct" />
+      <ProductCard :product="mockProduct" demo />
       <TrafficLight :evaluation="mockEvaluation" />
-      <AlternativesCarousel :alternatives="mockAlternatives" />
+      <AlternativesCarousel :alternatives="mockAlternatives" demo />
     </div>
 
     <!-- FAQ Section -->

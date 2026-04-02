@@ -5,6 +5,7 @@ import StarRating from '@/components/StarRating.vue';
 
 defineProps<{
   alternatives: AlternativeProduct[];
+  demo?: boolean;
 }>();
 
 const carousel = ref<HTMLElement | null>(null);
@@ -25,7 +26,7 @@ function scrollBy(direction: -1 | 1) {
       <div class="hidden gap-1 sm:flex" aria-hidden="true">
         <button
           type="button"
-          class="rounded-full border border-gray-300 p-1.5 text-gray-500 transition-colors hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-offset-2 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 dark:focus:ring-offset-gray-950"
+          class="rounded-full border border-gray-300 p-1.5 text-gray-500 transition-colors hover:bg-gray-100 focus:outline-none dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800"
           aria-label="Scorri a sinistra"
           @click="scrollBy(-1)"
         >
@@ -44,7 +45,7 @@ function scrollBy(direction: -1 | 1) {
         </button>
         <button
           type="button"
-          class="rounded-full border border-gray-300 p-1.5 text-gray-500 transition-colors hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-offset-2 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 dark:focus:ring-offset-gray-950"
+          class="rounded-full border border-gray-300 p-1.5 text-gray-500 transition-colors hover:bg-gray-100 focus:outline-none dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800"
           aria-label="Scorri a destra"
           @click="scrollBy(1)"
         >
@@ -115,6 +116,7 @@ function scrollBy(direction: -1 | 1) {
         </div>
 
         <a
+          v-if="!demo"
           :href="alt.affiliateUrl"
           target="_blank"
           rel="noopener noreferrer"
@@ -135,6 +137,26 @@ function scrollBy(direction: -1 | 1) {
             />
           </svg>
         </a>
+        <span
+          v-else
+          class="mt-3 inline-flex w-full cursor-default items-center justify-center gap-1 rounded-lg bg-[#FF9900] px-3 py-1.5 text-xs font-medium text-[#111]"
+          aria-hidden="true"
+        >
+          Vedi su Amazon
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-3 w-3"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+            aria-hidden="true"
+          >
+            <path
+              fill-rule="evenodd"
+              d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z"
+              clip-rule="evenodd"
+            />
+          </svg>
+        </span>
       </article>
     </div>
   </section>

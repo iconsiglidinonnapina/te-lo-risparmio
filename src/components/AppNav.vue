@@ -25,9 +25,10 @@ function goHomeAndReset() {
     class="sticky top-0 z-50 flex h-14 items-center justify-between border-b border-gray-200 bg-white/80 px-3 backdrop-blur-xl sm:px-6 dark:border-[rgba(148,163,184,0.1)] dark:bg-[#0a0a0a]/80"
   >
     <!-- Brand -->
-    <button type="button" class="flex shrink-0 items-center gap-2" @click="goHomeAndReset">
-      <span class="text-[15px] font-semibold whitespace-nowrap text-gray-900 dark:text-gray-100"
-        >Te lo risparmio</span
+    <button type="button" class="flex shrink-0 items-center" @click="goHomeAndReset">
+      <span
+        class="text-[17px] font-bold tracking-tight whitespace-nowrap text-gray-900 dark:text-gray-100"
+        >te lo risparmio</span
       >
     </button>
 

@@ -1,41 +1,117 @@
 import type { PriceInfo, PriceEvaluation, SignalColor } from '@/types/analysis';
 
-const SAVINGS_GOOD = 20;
-const SAVINGS_SOME = 5;
+// ── Signal 1: Discount from list price ──────────────────────────────
+// A large discount is a strong positive signal. No discount at all
+// (or negligible <5 %) is mildly negative because it means the product
+// is essentially at full price.  A missing list price (null) is neutral
+// because we simply have no data.
+function scoreSavings(pct: number | null): number {
+  if (pct === null) return 0;
+  if (pct >= 30) return 3;
+  if (pct >= 20) return 2;
+  if (pct >= 10) return 1;
+  if (pct >= 5) return 0.5;
+  return -0.5;
+}
 
-const ALT_MUCH_CHEAPER = 15;
-const ALT_EXPENSIVE = 10;
-const ALT_VERY_EXPENSIVE = 20;
+// ── Signal 2: Price vs average alternatives ─────────────────────────
+// Positive vsAltPct means the product is cheaper than the alternatives
+// average; negative means more expensive.  The scale is asymmetric on
+// purpose: being expensive hurts more than being cheap helps, because
+// "cheap vs alternatives" could simply mean lower-tier products.
+function scoreAlternatives(pct: number | null): number {
+  if (pct === null) return 0;
+  if (pct >= 25) return 4;
+  if (pct >= 15) return 3;
+  if (pct >= 5) return 2;
+  if (pct > -5) return 0; // within ±5 %
+  if (pct > -15) return -2;
+  if (pct > -30) return -3;
+  return -4;
+}
 
-function decide(savingsPct: number | null, vsAltPct: number | null): SignalColor {
-  const hasSavings = savingsPct !== null && savingsPct >= SAVINGS_GOOD;
-  const hasSomeSavings = savingsPct !== null && savingsPct >= SAVINGS_SOME;
-  const noSavings = savingsPct === null || savingsPct < SAVINGS_SOME;
+// ── Signal 3: Price vs cheapest alternative ─────────────────────────
+// Small bonus when the product beats the cheapest alternative found;
+// small penalty when it costs more than double.
+function scoreCheapest(productPrice: number, cheapest: number | null): number {
+  if (cheapest === null || cheapest <= 0) return 0;
+  if (productPrice <= cheapest) return 0.5;
+  if (productPrice > cheapest * 2) return -0.5;
+  return 0;
+}
 
-  if (hasSavings && (vsAltPct === null || vsAltPct >= 0)) return 'green';
-  if (vsAltPct !== null && vsAltPct >= ALT_MUCH_CHEAPER) return 'green';
-  if (hasSomeSavings && vsAltPct === null) return 'green';
+// ── Composite decision ──────────────────────────────────────────────
+const GREEN_THRESHOLD = 2;
+const RED_THRESHOLD = -2;
 
-  if (noSavings && vsAltPct !== null && vsAltPct <= -ALT_EXPENSIVE) return 'red';
-  if (!hasSomeSavings && vsAltPct !== null && vsAltPct <= -ALT_VERY_EXPENSIVE) return 'red';
+// Standalone thresholds (only one signal available)
+const SOLO_DISCOUNT_GREEN = 25;
+const SOLO_ALT_GREEN = 15;
+const SOLO_ALT_RED = -10;
 
+function decide(
+  savingsPct: number | null,
+  vsAltPct: number | null,
+  productPrice: number | null,
+  cheapestAltPrice: number | null,
+): SignalColor {
+  const hasDiscount = savingsPct !== null;
+  const hasAlt = vsAltPct !== null;
+
+  // ── Both signals available → combined score ──
+  if (hasDiscount && hasAlt) {
+    let score = scoreSavings(savingsPct) + scoreAlternatives(vsAltPct);
+    if (productPrice !== null) {
+      score += scoreCheapest(productPrice, cheapestAltPrice);
+    }
+    if (score >= GREEN_THRESHOLD) return 'green';
+    if (score <= RED_THRESHOLD) return 'red';
+    return 'yellow';
+  }
+
+  // ── Only discount (no alternatives found) ──
+  if (hasDiscount) {
+    // Without alternatives we can't confidently say RED.
+    return savingsPct >= SOLO_DISCOUNT_GREEN ? 'green' : 'yellow';
+  }
+
+  // ── Only alternatives (no list-price info) ──
+  if (hasAlt) {
+    if (vsAltPct >= SOLO_ALT_GREEN) return 'green';
+    if (vsAltPct <= SOLO_ALT_RED) return 'red';
+    return 'yellow';
+  }
+
+  // ── No data at all ──
   return 'yellow';
 }
 
+// ── Labels ──────────────────────────────────────────────────────────
 const LABELS: Record<SignalColor, string> = {
   green: 'Ottimo prezzo',
   yellow: 'Prezzo nella media',
   red: 'Prezzo alto',
 };
 
-function buildExplanation(savingsPct: number | null, vsAltPct: number | null): string {
+// ── Human-readable explanation ──────────────────────────────────────
+function buildExplanation(
+  savingsPct: number | null,
+  vsAltPct: number | null,
+  productPrice: number | null,
+  cheapestAltPrice: number | null,
+): string {
   const parts: string[] = [];
 
+  // Discount description
   if (savingsPct !== null) {
-    if (savingsPct >= SAVINGS_GOOD) {
-      parts.push(`Sconto del ${savingsPct}% rispetto al prezzo di listino`);
-    } else if (savingsPct >= SAVINGS_SOME) {
+    if (savingsPct >= 30) {
+      parts.push(`Ottimo sconto del ${savingsPct}% rispetto al prezzo di listino`);
+    } else if (savingsPct >= 20) {
+      parts.push(`Buon sconto del ${savingsPct}% rispetto al prezzo di listino`);
+    } else if (savingsPct >= 10) {
       parts.push(`Sconto del ${savingsPct}% rispetto al listino`);
+    } else if (savingsPct >= 5) {
+      parts.push(`Sconto contenuto del ${savingsPct}% rispetto al listino`);
     } else if (savingsPct > 0) {
       parts.push(`Sconto minimo del ${savingsPct}%`);
     } else {
@@ -43,18 +119,33 @@ function buildExplanation(savingsPct: number | null, vsAltPct: number | null): s
     }
   }
 
+  // vs average alternatives
   if (vsAltPct !== null) {
-    if (vsAltPct > 0) {
-      parts.push(`${Math.round(vsAltPct)}% più economico delle alternative`);
-    } else if (vsAltPct === 0) {
+    const rounded = Math.round(Math.abs(vsAltPct));
+    if (rounded === 0) {
       parts.push('Prezzo in linea con le alternative');
+    } else if (vsAltPct >= 25) {
+      parts.push(`${rounded}% più economico della media delle alternative`);
+    } else if (vsAltPct > 0) {
+      parts.push(`${rounded}% più economico delle alternative`);
+    } else if (Math.abs(vsAltPct) >= 30) {
+      parts.push(`Nettamente più caro delle alternative (${rounded}%)`);
     } else {
-      parts.push(`${Math.round(Math.abs(vsAltPct))}% più caro delle alternative`);
+      parts.push(`${rounded}% più caro delle alternative`);
+    }
+  }
+
+  // Cheapest alternative note
+  if (productPrice !== null && cheapestAltPrice !== null && cheapestAltPrice > 0) {
+    if (productPrice <= cheapestAltPrice) {
+      parts.push('È il prezzo più basso tra tutte le alternative trovate');
+    } else if (productPrice > cheapestAltPrice * 2) {
+      parts.push("Costa più del doppio dell'alternativa più economica");
     }
   }
 
   if (parts.length === 0) {
-    return 'Prezzo pieno — nessun dato di confronto';
+    return 'Prezzo pieno — nessun dato di confronto disponibile';
   }
 
   return parts.join('. ');
@@ -87,7 +178,7 @@ export function evaluatePrice(
     }
   }
 
-  const color = decide(savingsPct, vsAltPct);
+  const color = decide(savingsPct, vsAltPct, product.price?.amount ?? null, cheapestAltPrice);
 
   // Build priceBars if we have the necessary data
   let priceBars = null;
@@ -123,7 +214,12 @@ export function evaluatePrice(
   return {
     color,
     label: LABELS[color],
-    explanation: buildExplanation(savingsPct, vsAltPct),
+    explanation: buildExplanation(
+      savingsPct,
+      vsAltPct,
+      product.price?.amount ?? null,
+      cheapestAltPrice,
+    ),
     savingsPct,
     vsAlternativesPct: vsAltPct !== null ? Math.round(vsAltPct * 100) / 100 : null,
     priceBars,
