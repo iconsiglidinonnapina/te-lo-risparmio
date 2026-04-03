@@ -24,6 +24,7 @@ export const posthogPlugin = {
       capture_pageview: false,
       persistence: 'localStorage',
       respect_dnt: true,
+      disable_session_recording: true,
       sanitize_properties(properties) {
         // Strip full Amazon URLs which may contain personal search queries
         if (properties['$current_url']) {
