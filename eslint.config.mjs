@@ -60,4 +60,10 @@ export default tseslint.config(
       globals: { ...globals.browser },
     },
   },
+  {
+    files: ['tests/**/*.test.ts'],
+    rules: {
+      '@typescript-eslint/unbound-method': 'off',
+    },
+  },
 );
