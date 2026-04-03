@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router';
+import posthog from 'posthog-js';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -17,6 +18,12 @@ const router = createRouter({
       component: () => import('@/views/HowItWorks.vue'),
     },
   ],
+});
+
+router.afterEach((to) => {
+  if (import.meta.env.VITE_POSTHOG_KEY) {
+    posthog.capture('$pageview', { $current_url: to.fullPath });
+  }
 });
 
 export default router;

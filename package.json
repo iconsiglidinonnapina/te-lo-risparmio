@@ -34,6 +34,7 @@
     "fastify": "^5.3.3",
     "lottie-web": "^5.13.0",
     "pinia": "^3.0.2",
+    "posthog-js": "^1.364.6",
     "vue": "^3.5.13",
     "vue-router": "^4.6.4",
     "vue3-lottie": "^3.3.1"
