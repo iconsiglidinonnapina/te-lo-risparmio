@@ -9,7 +9,7 @@ const facebook = {
 };
 const telegram = {
   name: 'Telegram',
-  href: 'https://t.me/shopping_con_nonna_pina',
+  href: 'https://t.me/+xn6jk1Z7mToxNmJk',
 };
 const whatsapp = {
   name: 'WhatsApp',

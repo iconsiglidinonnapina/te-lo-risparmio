@@ -79,6 +79,24 @@ body {
     border-color 0.3s ease;
 }
 
+/* Toggle icon transition */
+.toggle-icon-enter-active,
+.toggle-icon-leave-active {
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
+}
+
+.toggle-icon-enter-from {
+  opacity: 0;
+  transform: rotate(-90deg) scale(0.5);
+}
+
+.toggle-icon-leave-to {
+  opacity: 0;
+  transform: rotate(90deg) scale(0.5);
+}
+
 button,
 [role='button'],
 a,
