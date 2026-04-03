@@ -1,6 +1,6 @@
 import { ref, watchEffect } from 'vue';
 
-const STORAGE_KEY = 'price-tracker-dark-mode';
+const STORAGE_KEY = 'te-lo-risparmio-dark-mode';
 
 function getInitialValue(): boolean {
   const stored = localStorage.getItem(STORAGE_KEY);

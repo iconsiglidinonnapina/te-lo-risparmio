@@ -1,7 +1,7 @@
 {
-  "name": "amazon-price-advisor",
+  "name": "te-lo-risparmio",
   "version": "0.0.0",
-  "description": "Amazon Price Advisor — valuta prezzi e suggerisce alternative tramite Amazon Creators API",
+  "description": "Te lo risparmio — analizza prezzi Amazon e suggerisce alternative migliori tramite Amazon Creators API",
   "type": "module",
   "private": true,
   "engines": {
