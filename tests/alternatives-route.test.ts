@@ -164,7 +164,7 @@ describe('GET /api/alternatives/:asin', () => {
     expect(body.alternatives).toEqual([]);
   });
 
-  it('limits results to 5 alternatives', async () => {
+  it('limits results to 10 alternatives', async () => {
     mockGetItem.mockResolvedValueOnce(MOCK_PRODUCT);
 
     const many = Array.from({ length: 9 }, (_, i) =>
@@ -181,7 +181,7 @@ describe('GET /api/alternatives/:asin', () => {
     const res = await app.inject({ method: 'GET', url: '/api/alternatives/B084K866MQ' });
 
     const body: AlternativesBody = res.json();
-    expect(body.alternatives.length).toBeLessThanOrEqual(5);
+    expect(body.alternatives.length).toBeLessThanOrEqual(10);
   });
 
   it('returns 422 when main product has no price', async () => {

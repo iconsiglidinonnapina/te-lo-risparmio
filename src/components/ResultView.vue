@@ -3,6 +3,9 @@ import type { ProductResponse, AlternativeProduct, PriceEvaluation } from '@/typ
 import ProductCard from '@/components/ProductCard.vue';
 import TrafficLight from '@/components/TrafficLight.vue';
 import AlternativesCarousel from '@/components/AlternativesCarousel.vue';
+import { useAnalytics } from '@/composables/useAnalytics';
+
+const { trackEvent } = useAnalytics();
 
 defineProps<{
   product: ProductResponse;
@@ -27,7 +30,10 @@ defineEmits<{
       <button
         type="button"
         class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-offset-2 dark:border-gray-700 dark:bg-[#141414] dark:text-gray-300 dark:hover:bg-[#1a1a1a] dark:focus:ring-offset-gray-950"
-        @click="$emit('reset')"
+        @click="
+          trackEvent('new_search_clicked');
+          $emit('reset');
+        "
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"

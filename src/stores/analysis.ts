@@ -2,6 +2,7 @@ import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import { apiFetch } from '@/api/client';
 import { evaluatePrice } from '@/utils/price-evaluator';
+import { useAnalytics } from '@/composables/useAnalytics';
 import type {
   AppState,
   LoadingStep,
@@ -12,6 +13,7 @@ import type {
 } from '@/types/analysis';
 
 export const useAnalysisStore = defineStore('analysis', () => {
+  const { trackEvent } = useAnalytics();
   const appState = ref<AppState>('input');
   const loadingStep = ref<LoadingStep>('fetching-product');
   const product = ref<ProductResponse | null>(null);
@@ -35,6 +37,11 @@ export const useAnalysisStore = defineStore('analysis', () => {
   }
 
   async function analyze(asin: string, shortLinkUrl?: string) {
+    trackEvent('url_submitted', {
+      has_asin: !!asin,
+      is_short_link: !!shortLinkUrl,
+    });
+
     appState.value = 'loading';
     error.value = null;
     product.value = null;
@@ -70,9 +77,22 @@ export const useAnalysisStore = defineStore('analysis', () => {
       }
 
       evaluation.value = evaluatePrice(productData, alternatives.value);
+
+      trackEvent('analysis_completed', {
+        asin: resolvedAsin,
+        price_color: evaluation.value.color,
+        has_alternatives: alternatives.value.length > 0,
+        alternatives_count: alternatives.value.length,
+      });
+
       appState.value = 'result';
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Errore sconosciuto';
+
+      trackEvent('analysis_failed', {
+        error_message: error.value,
+      });
+
       appState.value = 'error';
     }
   }

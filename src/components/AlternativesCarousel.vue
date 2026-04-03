@@ -2,11 +2,23 @@
 import { ref } from 'vue';
 import type { AlternativeProduct } from '@/types/analysis';
 import StarRating from '@/components/StarRating.vue';
+import { useAnalytics } from '@/composables/useAnalytics';
 
-defineProps<{
+const props = defineProps<{
   alternatives: AlternativeProduct[];
   demo?: boolean;
 }>();
+
+const { trackEvent } = useAnalytics();
+
+function trackAlternativeClick(alt: AlternativeProduct) {
+  if (props.demo) return;
+  const position = props.alternatives.indexOf(alt);
+  trackEvent('alternative_clicked', {
+    alternative_asin: alt.asin,
+    position,
+  });
+}
 
 const carousel = ref<HTMLElement | null>(null);
 
@@ -121,6 +133,7 @@ function scrollBy(direction: -1 | 1) {
           target="_blank"
           rel="noopener noreferrer"
           class="mt-3 inline-flex w-full items-center justify-center gap-1 rounded-lg bg-[#FF9900] px-3 py-1.5 text-xs font-medium text-[#111] transition-colors hover:bg-[#E68A00] focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 dark:focus:ring-offset-gray-950"
+          @click="trackAlternativeClick(alt)"
         >
           Vedi su Amazon
           <svg
