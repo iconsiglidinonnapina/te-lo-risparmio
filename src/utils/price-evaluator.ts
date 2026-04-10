@@ -1,4 +1,9 @@
-import type { PriceInfo, PriceEvaluation, SignalColor } from '@/types/analysis';
+import type {
+  PriceInfo,
+  PriceEvaluation,
+  SignalColor,
+  CategorizedAlternatives,
+} from '@/types/analysis';
 
 // ── Signal 1: Discount from list price ──────────────────────────────
 // A large discount is a strong positive signal. No discount at all
@@ -40,6 +45,36 @@ function scoreCheapest(productPrice: number, cheapest: number | null): number {
   return 0;
 }
 
+// ── Signal 4: Tier composition ──────────────────────────────────────
+// Rewards products that are cheaper than most alternatives in the same
+// category and penalises when many cheaper alternatives with decent
+// reviews exist.
+function scoreTierComposition(categorized: CategorizedAlternatives | null | undefined): number {
+  if (!categorized) return 0;
+  const { cheaper, similar, higher } = categorized;
+  const total = cheaper.length + similar.length + higher.length;
+  if (total === 0) return 0;
+
+  let score = 0;
+
+  // Bonus when the product is priced below many alternatives
+  if (higher.length > 0) {
+    const higherRatio = higher.length / total;
+    if (higherRatio >= 0.5) score += 1.5;
+    else if (higherRatio >= 0.3) score += 0.75;
+  }
+
+  // Penalty when many cheaper alternatives with good reviews exist
+  const goodCheap = cheaper.filter((a) => a.reviewRating !== null && a.reviewRating >= 4);
+  if (goodCheap.length >= 3) score -= 1.5;
+  else if (goodCheap.length >= 1) score -= 0.5;
+
+  // Small bonus when there are no cheaper alternatives at all
+  if (cheaper.length === 0 && total >= 2) score += 0.5;
+
+  return score;
+}
+
 // ── Composite decision ──────────────────────────────────────────────
 const GREEN_THRESHOLD = 2;
 const RED_THRESHOLD = -2;
@@ -54,6 +89,7 @@ function decide(
   vsAltPct: number | null,
   productPrice: number | null,
   cheapestAltPrice: number | null,
+  categorized?: CategorizedAlternatives | null,
 ): SignalColor {
   const hasDiscount = savingsPct !== null;
   const hasAlt = vsAltPct !== null;
@@ -64,6 +100,7 @@ function decide(
     if (productPrice !== null) {
       score += scoreCheapest(productPrice, cheapestAltPrice);
     }
+    score += scoreTierComposition(categorized);
     if (score >= GREEN_THRESHOLD) return 'green';
     if (score <= RED_THRESHOLD) return 'red';
     return 'yellow';
@@ -99,6 +136,7 @@ function buildExplanation(
   vsAltPct: number | null,
   productPrice: number | null,
   cheapestAltPrice: number | null,
+  categorized?: CategorizedAlternatives | null,
 ): string {
   const parts: string[] = [];
 
@@ -144,6 +182,34 @@ function buildExplanation(
     }
   }
 
+  // Tier-based contextual notes
+  if (categorized) {
+    const { cheaper, similar, higher } = categorized;
+    const goodCheap = cheaper.filter((a) => a.reviewRating !== null && a.reviewRating >= 4);
+    if (goodCheap.length >= 3) {
+      parts.push(`Esistono ${goodCheap.length} alternative più economiche con ottime recensioni`);
+    } else if (goodCheap.length >= 1) {
+      parts.push(
+        `${goodCheap.length === 1 ? 'Esiste 1 alternativa più economica' : `Esistono ${goodCheap.length} alternative più economiche`} con buone recensioni`,
+      );
+    } else if (cheaper.length === 0 && similar.length + higher.length >= 2) {
+      parts.push('Nessuna alternativa significativamente più economica trovata');
+    }
+
+    if (similar.length > 0) {
+      parts.push(
+        `Prezzo in linea con ${similar.length} ${similar.length === 1 ? 'prodotto comparabile' : 'prodotti comparabili'}`,
+      );
+    }
+
+    if (higher.length > 0) {
+      const total = cheaper.length + similar.length + higher.length;
+      if (higher.length / total >= 0.5) {
+        parts.push('Costa meno della maggior parte dei prodotti nella categoria');
+      }
+    }
+  }
+
   if (parts.length === 0) {
     return 'Prezzo pieno — nessun dato di confronto disponibile';
   }
@@ -158,6 +224,7 @@ export function evaluatePrice(
     reviewRating: number | null;
   },
   alternatives: { price: PriceInfo | null }[],
+  categorized?: CategorizedAlternatives | null,
 ): PriceEvaluation {
   const savingsPct = product.savingsPercentage;
 
@@ -165,8 +232,11 @@ export function evaluatePrice(
   let avgAltPrice: number | null = null;
   let cheapestAltPrice: number | null = null;
 
-  if (product.price && alternatives.length > 0) {
-    const altPrices = alternatives
+  if (product.price) {
+    // Prefer the "similar" tier for comparison (same price bracket);
+    // fall back to all alternatives when categorized data is unavailable.
+    const comparePool = categorized?.similar ?? alternatives;
+    const altPrices = comparePool
       .map((a) => a.price?.amount)
       .filter((p): p is number => p !== undefined && p !== null);
 
@@ -178,7 +248,13 @@ export function evaluatePrice(
     }
   }
 
-  const color = decide(savingsPct, vsAltPct, product.price?.amount ?? null, cheapestAltPrice);
+  const color = decide(
+    savingsPct,
+    vsAltPct,
+    product.price?.amount ?? null,
+    cheapestAltPrice,
+    categorized,
+  );
 
   // Build priceBars if we have the necessary data
   let priceBars = null;
@@ -219,6 +295,7 @@ export function evaluatePrice(
       vsAltPct,
       product.price?.amount ?? null,
       cheapestAltPrice,
+      categorized,
     ),
     savingsPct,
     vsAlternativesPct: vsAltPct !== null ? Math.round(vsAltPct * 100) / 100 : null,

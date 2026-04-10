@@ -48,7 +48,7 @@ function jaccardSimilarity(a: Set<string>, b: Set<string>): number {
  * after the brand (position 0). These usually identify the product type.
  * E.g. "SwitchBot Apri Tende Intelligente" → ["apri", "tende"]
  */
-function extractCoreTokens(title: string, maxCore = 3): string[] {
+function extractCoreTokens(title: string, maxCore = 4): string[] {
   const tokens = tokenize(title);
   // Deduplicate
   const seen = new Set<string>();
@@ -116,13 +116,19 @@ export interface RelevanceFilterConfig {
   minSimilarityRelaxed: number;
   requireCoreMatch: boolean;
   minResults: number;
+  /** Maximum price multiplier vs reference — alternatives above this are excluded as outliers */
+  maxPriceMultiplier: number;
+  /** Reference price for outlier filtering (set by caller) */
+  referencePrice: number | null;
 }
 
 const DEFAULT_CONFIG: RelevanceFilterConfig = {
-  minSimilarity: 0.12,
-  minSimilarityRelaxed: 0.06,
+  minSimilarity: 0.15,
+  minSimilarityRelaxed: 0.08,
   requireCoreMatch: true,
   minResults: 2,
+  maxPriceMultiplier: 3,
+  referencePrice: null,
 };
 
 export interface RelevanceFilterResult<T extends ProductData> {
@@ -148,8 +154,15 @@ export function filterByRelevance<T extends ProductData>(
 ): RelevanceFilterResult<T>[] {
   const cfg = { ...DEFAULT_CONFIG, ...config };
 
+  // Pre-filter: exclude price outliers (alternatives absurdly more expensive)
+  let pool = alternatives;
+  if (cfg.referencePrice !== null && cfg.referencePrice > 0) {
+    const priceLimit = cfg.referencePrice * cfg.maxPriceMultiplier;
+    pool = alternatives.filter((p) => p.price === null || p.price.amount <= priceLimit);
+  }
+
   // Score all alternatives
-  const scored: RelevanceFilterResult<T>[] = alternatives.map((product) => ({
+  const scored: RelevanceFilterResult<T>[] = pool.map((product) => ({
     product,
     relevance: computeRelevance(referenceTitle, product.title),
   }));

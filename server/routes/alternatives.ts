@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify';
-import { getItem, searchAlternatives, CreatorsApiError } from '../services/creators-api-client.js';
+import { searchAlternatives, CreatorsApiError } from '../services/creators-api-client.js';
+import { getCachedProduct } from '../services/product-cache.js';
 import { extractSearchQuery } from '../services/keyword-extractor.js';
 import { rankAlternatives, type RankedProduct } from '../services/alternative-ranker.js';
 import { filterByRelevance } from '../services/relevance-filter.js';
@@ -14,9 +15,16 @@ export interface AlternativeWithAffiliateUrl extends RankedProduct {
   affiliateUrl: string;
 }
 
+export interface CategorizedAlternativesResponse {
+  cheaper: AlternativeWithAffiliateUrl[];
+  similar: AlternativeWithAffiliateUrl[];
+  higher: AlternativeWithAffiliateUrl[];
+}
+
 export interface AlternativesResponse {
   asin: string;
   alternatives: AlternativeWithAffiliateUrl[];
+  categorized?: CategorizedAlternativesResponse;
 }
 
 export function alternativesRoutes(app: FastifyInstance) {
@@ -42,8 +50,8 @@ export function alternativesRoutes(app: FastifyInstance) {
       }
 
       try {
-        // 1. Fetch the main product to get browseNodeId, title, and price
-        const product = await getItem(asin);
+        // 1. Fetch the main product (shared cache avoids duplicate API calls)
+        const product = await getCachedProduct(asin);
 
         if (!product.price) {
           return reply
@@ -59,19 +67,39 @@ export function alternativesRoutes(app: FastifyInstance) {
             .send({ error: 'Impossibile estrarre parole chiave dal titolo', code: 'NO_KEYWORDS' });
         }
 
-        // 3. Search for alternatives in the same category (no price cap — we need
-        //    the full price landscape for an accurate comparison)
-        const rawAlternatives = await searchAlternatives({
-          browseNodeId: product.browseNodeId ?? undefined,
+        // 3. Search for alternatives via two parallel queries for broader coverage:
+        //    - Query A: same category (browseNodeId) + keywords → tighter match
+        //    - Query B: keywords only (no browseNodeId) → cross-category discovery
+        //    Results are merged and deduplicated by ASIN.
+        const searchBase = {
           keywords: searchQuery,
           excludeAsin: asin,
-        });
+          minReviewsRating: 3,
+        };
+
+        const [categoryResults, keywordResults] = await Promise.all([
+          product.browseNodeId
+            ? searchAlternatives({ ...searchBase, browseNodeId: product.browseNodeId })
+            : Promise.resolve([]),
+          searchAlternatives(searchBase),
+        ]);
+
+        const seenAsins = new Set<string>();
+        const rawAlternatives: typeof categoryResults = [];
+        for (const item of [...categoryResults, ...keywordResults]) {
+          if (!seenAsins.has(item.asin)) {
+            seenAsins.add(item.asin);
+            rawAlternatives.push(item);
+          }
+        }
 
         // 4. Enrich alternatives with scraped review data (API may not provide it)
         const enrichedAlternatives = await enrichAllWithReviews(rawAlternatives);
 
         // 5. Filter by semantic relevance to remove unrelated products
-        const relevanceResults = filterByRelevance(product.title, enrichedAlternatives);
+        const relevanceResults = filterByRelevance(product.title, enrichedAlternatives, {
+          referencePrice: product.price.amount,
+        });
 
         // Build relevance score map for the ranker
         const relevanceScores = new Map<string, number>();
@@ -94,7 +122,24 @@ export function alternativesRoutes(app: FastifyInstance) {
           affiliateUrl: buildAffiliateLink(alt.asin),
         }));
 
-        const response: AlternativesResponse = { asin, alternatives };
+        // 8. Categorize by price tier relative to the original product
+        const productPrice = product.price.amount;
+        const categorized: CategorizedAlternativesResponse = {
+          cheaper: alternatives.filter(
+            (a) => a.price !== null && a.price.amount < productPrice * 0.95,
+          ),
+          similar: alternatives.filter(
+            (a) =>
+              a.price !== null &&
+              a.price.amount >= productPrice * 0.95 &&
+              a.price.amount <= productPrice * 1.1,
+          ),
+          higher: alternatives.filter(
+            (a) => a.price !== null && a.price.amount > productPrice * 1.1,
+          ),
+        };
+
+        const response: AlternativesResponse = { asin, alternatives, categorized };
         alternativesCache.set(asin, response);
 
         return response;

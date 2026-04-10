@@ -1,12 +1,9 @@
 import type { FastifyInstance } from 'fastify';
-import { getItem, CreatorsApiError, type ProductData } from '../services/creators-api-client.js';
+import { CreatorsApiError, type ProductData } from '../services/creators-api-client.js';
+import { getCachedProduct } from '../services/product-cache.js';
 import { extractKeywords } from '../services/keyword-extractor.js';
 import { buildAffiliateLink } from '../services/affiliate-builder.js';
 import { enrichWithReviews } from '../services/review-enricher.js';
-import { TtlCache } from '../services/cache.js';
-
-const ONE_HOUR = 60 * 60 * 1000;
-const productCache = new TtlCache<ProductData>(ONE_HOUR);
 
 export interface ProductResponse extends ProductData {
   keywords: string;
@@ -30,18 +27,9 @@ export function productRoutes(app: FastifyInstance) {
     async (request, reply) => {
       const { asin } = request.params;
 
-      const cached = productCache.get(asin);
-      if (cached) {
-        const enriched = await enrichWithReviews(cached);
-        const keywords = extractKeywords(enriched.title);
-        const affiliateUrl = buildAffiliateLink(enriched.asin);
-        return { ...enriched, keywords, affiliateUrl } satisfies ProductResponse;
-      }
-
       try {
-        const product = await getItem(asin);
+        const product = await getCachedProduct(asin);
         const enriched = await enrichWithReviews(product);
-        productCache.set(asin, enriched);
 
         const keywords = extractKeywords(enriched.title);
         const affiliateUrl = buildAffiliateLink(enriched.asin);

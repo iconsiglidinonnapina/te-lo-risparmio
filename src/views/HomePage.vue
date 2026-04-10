@@ -46,6 +46,7 @@ function handleReset() {
       <ResultView
         :product="store.product"
         :alternatives="store.alternatives"
+        :categorized="store.categorizedAlternatives"
         :evaluation="store.evaluation"
         @reset="handleReset"
       />

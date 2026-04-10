@@ -9,6 +9,7 @@ import type {
   ProductResponse,
   AlternativesResponse,
   AlternativeProduct,
+  CategorizedAlternatives,
   PriceEvaluation,
 } from '@/types/analysis';
 
@@ -18,6 +19,7 @@ export const useAnalysisStore = defineStore('analysis', () => {
   const loadingStep = ref<LoadingStep>('fetching-product');
   const product = ref<ProductResponse | null>(null);
   const alternatives = ref<AlternativeProduct[]>([]);
+  const categorizedAlternatives = ref<CategorizedAlternatives | null>(null);
   const evaluation = ref<PriceEvaluation | null>(null);
   const error = ref<string | null>(null);
 
@@ -46,6 +48,7 @@ export const useAnalysisStore = defineStore('analysis', () => {
     error.value = null;
     product.value = null;
     alternatives.value = [];
+    categorizedAlternatives.value = null;
     evaluation.value = null;
 
     try {
@@ -72,11 +75,34 @@ export const useAnalysisStore = defineStore('analysis', () => {
           `/api/alternatives/${encodeURIComponent(resolvedAsin)}`,
         );
         alternatives.value = altData.alternatives;
+
+        // Use backend categorization or compute client-side fallback
+        if (altData.categorized) {
+          categorizedAlternatives.value = altData.categorized;
+        } else if (productData.price) {
+          const p = productData.price.amount;
+          categorizedAlternatives.value = {
+            cheaper: altData.alternatives.filter(
+              (a) => a.price !== null && a.price.amount < p * 0.95,
+            ),
+            similar: altData.alternatives.filter(
+              (a) => a.price !== null && a.price.amount >= p * 0.95 && a.price.amount <= p * 1.1,
+            ),
+            higher: altData.alternatives.filter(
+              (a) => a.price !== null && a.price.amount > p * 1.1,
+            ),
+          };
+        }
       } catch {
         alternatives.value = [];
+        categorizedAlternatives.value = null;
       }
 
-      evaluation.value = evaluatePrice(productData, alternatives.value);
+      evaluation.value = evaluatePrice(
+        productData,
+        alternatives.value,
+        categorizedAlternatives.value,
+      );
 
       trackEvent('analysis_completed', {
         asin: resolvedAsin,
@@ -102,6 +128,7 @@ export const useAnalysisStore = defineStore('analysis', () => {
     loadingStep.value = 'fetching-product';
     product.value = null;
     alternatives.value = [];
+    categorizedAlternatives.value = null;
     evaluation.value = null;
     error.value = null;
   }
@@ -111,6 +138,7 @@ export const useAnalysisStore = defineStore('analysis', () => {
     loadingStep,
     product,
     alternatives,
+    categorizedAlternatives,
     evaluation,
     error,
     analyze,

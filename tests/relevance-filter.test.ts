@@ -111,9 +111,9 @@ describe('computeRelevance', () => {
     );
     // Shared token "smartphone" gives some overlap, but model-specific tokens differ
     expect(r.similarity).toBeGreaterThanOrEqual(0.1);
-    // Core tokens (galaxy, s24, ultra) don't match (pixel, pro) → coreMatch = false
-    // This is correct: they share product *type* but have different model cores
-    expect(r.coreMatch).toBe(false);
+    // Core tokens now include the product type "smartphone" (maxCore=4) which
+    // both titles share → coreMatch = true. This is correct: both are smartphones.
+    expect(r.coreMatch).toBe(true);
   });
 
   it('gives low similarity: phone case vs smartphone', () => {

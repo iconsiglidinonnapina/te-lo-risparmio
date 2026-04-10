@@ -18,6 +18,15 @@ vi.mock('../server/services/creators-api-client', () => ({
   },
 }));
 
+vi.mock('../server/services/product-cache', async () => {
+  const { getItem } = await import('../server/services/creators-api-client');
+  return {
+    getCachedProduct: vi.fn((...args: unknown[]) =>
+      (getItem as (...a: unknown[]) => unknown)(...args),
+    ),
+  };
+});
+
 const alternativesCacheStore = new Map<string, unknown>();
 vi.mock('../server/services/cache', () => {
   return {
@@ -123,7 +132,9 @@ describe('GET /api/alternatives/:asin', () => {
         price: { amount: 30, currency: 'EUR', displayAmount: '30,00 €' },
       }),
     ];
+    // Dual query: first call (with browseNodeId), second call (keywords only)
     mockSearchAlternatives.mockResolvedValueOnce(alternatives);
+    mockSearchAlternatives.mockResolvedValueOnce([]);
 
     const app = buildApp();
     const res = await app.inject({ method: 'GET', url: '/api/alternatives/B084K866MQ' });
@@ -138,23 +149,35 @@ describe('GET /api/alternatives/:asin', () => {
     expect(typeof body.alternatives[0]!.score).toBe('number');
   });
 
-  it('passes browseNodeId, keywords, and maxPrice to searchAlternatives', async () => {
+  it('passes browseNodeId, keywords, and minReviewsRating to searchAlternatives', async () => {
     mockGetItem.mockResolvedValueOnce(MOCK_PRODUCT);
-    mockSearchAlternatives.mockResolvedValueOnce([]);
+    mockSearchAlternatives.mockResolvedValue([]);
 
     const app = buildApp();
     await app.inject({ method: 'GET', url: '/api/alternatives/B084K866MQ' });
 
-    expect(mockSearchAlternatives).toHaveBeenCalledWith({
-      browseNodeId: '123456',
-      keywords: expect.any(String) as string,
-      excludeAsin: 'B084K866MQ',
-    });
+    // Dual query strategy: first call with browseNodeId, second without
+    expect(mockSearchAlternatives).toHaveBeenCalledTimes(2);
+    expect(mockSearchAlternatives).toHaveBeenCalledWith(
+      expect.objectContaining({
+        browseNodeId: '123456',
+        keywords: expect.any(String) as string,
+        excludeAsin: 'B084K866MQ',
+        minReviewsRating: 3,
+      }),
+    );
+    expect(mockSearchAlternatives).toHaveBeenCalledWith(
+      expect.objectContaining({
+        keywords: expect.any(String) as string,
+        excludeAsin: 'B084K866MQ',
+        minReviewsRating: 3,
+      }),
+    );
   });
 
   it('returns empty alternatives when no matches found', async () => {
     mockGetItem.mockResolvedValueOnce(MOCK_PRODUCT);
-    mockSearchAlternatives.mockResolvedValueOnce([]);
+    mockSearchAlternatives.mockResolvedValue([]);
 
     const app = buildApp();
     const res = await app.inject({ method: 'GET', url: '/api/alternatives/B084K866MQ' });
@@ -175,6 +198,8 @@ describe('GET /api/alternatives/:asin', () => {
         price: { amount: 30 + i, currency: 'EUR', displayAmount: `${30 + i},00 €` },
       }),
     );
+    // Both queries return the same set — dedup will collapse them
+    mockSearchAlternatives.mockResolvedValueOnce(many);
     mockSearchAlternatives.mockResolvedValueOnce(many);
 
     const app = buildApp();
@@ -243,7 +268,9 @@ describe('GET /api/alternatives/:asin', () => {
 
   it('serves cached response on subsequent requests', async () => {
     mockGetItem.mockResolvedValueOnce(MOCK_PRODUCT);
-    mockSearchAlternatives.mockResolvedValueOnce([makeAlternative({ asin: 'CACHED_ALT' })]);
+    const alt = makeAlternative({ asin: 'CACHED_ALT' });
+    mockSearchAlternatives.mockResolvedValueOnce([alt]);
+    mockSearchAlternatives.mockResolvedValueOnce([]);
 
     const app = buildApp();
 
@@ -264,13 +291,20 @@ describe('GET /api/alternatives/:asin', () => {
 
   it('omits browseNodeId when product has none', async () => {
     mockGetItem.mockResolvedValueOnce({ ...MOCK_PRODUCT, browseNodeId: null });
-    mockSearchAlternatives.mockResolvedValueOnce([]);
+    mockSearchAlternatives.mockResolvedValue([]);
 
     const app = buildApp();
     await app.inject({ method: 'GET', url: '/api/alternatives/B084K866MQ' });
 
+    // When no browseNodeId, the category query resolves to [] immediately
+    // and only the keyword query is made to searchAlternatives
+    expect(mockSearchAlternatives).toHaveBeenCalledTimes(1);
     expect(mockSearchAlternatives).toHaveBeenCalledWith(
-      expect.objectContaining({ browseNodeId: undefined }),
+      expect.objectContaining({
+        keywords: expect.any(String) as string,
+        excludeAsin: 'B084K866MQ',
+        minReviewsRating: 3,
+      }),
     );
   });
 });

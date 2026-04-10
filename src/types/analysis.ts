@@ -38,9 +38,18 @@ export interface AlternativeProduct {
   affiliateUrl: string;
 }
 
+export type AlternativeTier = 'cheaper' | 'similar' | 'higher';
+
+export interface CategorizedAlternatives {
+  cheaper: AlternativeProduct[];
+  similar: AlternativeProduct[];
+  higher: AlternativeProduct[];
+}
+
 export interface AlternativesResponse {
   asin: string;
   alternatives: AlternativeProduct[];
+  categorized?: CategorizedAlternatives;
 }
 
 export type SignalColor = 'green' | 'yellow' | 'red';

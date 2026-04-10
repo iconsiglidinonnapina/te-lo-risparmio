@@ -1,28 +1,80 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-import type { AlternativeProduct } from '@/types/analysis';
+import { ref, computed, onMounted, onBeforeUnmount, nextTick, watch } from 'vue';
+import type { AlternativeProduct, AlternativeTier } from '@/types/analysis';
 import StarRating from '@/components/StarRating.vue';
 import { useAnalytics } from '@/composables/useAnalytics';
 
 const props = defineProps<{
   alternatives: AlternativeProduct[];
+  title?: string;
+  tier?: AlternativeTier;
   demo?: boolean;
 }>();
 
 const { trackEvent } = useAnalytics();
+
+const headingId = computed(() => {
+  const suffix = props.tier ?? 'all';
+  return `alternatives-heading-${suffix}`;
+});
+
+const displayTitle = computed(() => props.title ?? 'Alternative consigliate');
 
 function trackAlternativeClick(alt: AlternativeProduct) {
   if (props.demo) return;
   const position = props.alternatives.indexOf(alt);
   trackEvent('alternative_clicked', {
     alternative_asin: alt.asin,
+    alternative_title: alt.title,
+    alternative_price: alt.price?.amount ?? null,
     position,
+    destination_url: alt.affiliateUrl,
+    carousel_tier: props.tier ?? 'all',
   });
 }
 
 const carousel = ref<HTMLElement | null>(null);
+const canScrollLeft = ref(false);
+const canScrollRight = ref(false);
+
+function updateScrollState() {
+  const el = carousel.value;
+  if (!el) {
+    canScrollLeft.value = false;
+    canScrollRight.value = false;
+    return;
+  }
+  canScrollLeft.value = el.scrollLeft > 1;
+  canScrollRight.value = el.scrollLeft + el.clientWidth < el.scrollWidth - 1;
+}
+
+let resizeObserver: ResizeObserver | null = null;
+
+onMounted(() => {
+  const el = carousel.value;
+  if (!el) return;
+  el.addEventListener('scroll', updateScrollState, { passive: true });
+  resizeObserver = new ResizeObserver(updateScrollState);
+  resizeObserver.observe(el);
+  void nextTick(updateScrollState);
+});
+
+onBeforeUnmount(() => {
+  const el = carousel.value;
+  if (el) el.removeEventListener('scroll', updateScrollState);
+  resizeObserver?.disconnect();
+});
+
+watch(
+  () => props.alternatives,
+  () => void nextTick(updateScrollState),
+);
 
 function scrollBy(direction: -1 | 1) {
+  trackEvent('alternative_carousel_scrolled', {
+    direction: direction === 1 ? 'right' : 'left',
+    carousel_tier: props.tier ?? 'all',
+  });
   if (!carousel.value) return;
   const cardWidth = carousel.value.firstElementChild?.clientWidth ?? 240;
   carousel.value.scrollBy({ left: direction * (cardWidth + 16), behavior: 'smooth' });
@@ -30,15 +82,22 @@ function scrollBy(direction: -1 | 1) {
 </script>
 
 <template>
-  <section v-if="alternatives.length > 0" aria-labelledby="alternatives-heading">
+  <section v-if="alternatives.length > 0" :aria-labelledby="headingId">
     <div class="flex items-center justify-between">
-      <h3 id="alternatives-heading" class="text-lg font-semibold text-gray-900 dark:text-gray-100">
-        Alternative consigliate
+      <h3 :id="headingId" class="text-lg font-semibold text-gray-900 dark:text-gray-100">
+        {{ displayTitle }}
       </h3>
-      <div class="hidden gap-1 sm:flex" aria-hidden="true">
+      <div v-if="canScrollLeft || canScrollRight" class="hidden gap-1 sm:flex">
         <button
           type="button"
-          class="rounded-full border border-gray-300 p-1.5 text-gray-500 transition-colors hover:bg-gray-100 focus:outline-none dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800"
+          class="rounded-full border border-gray-300 p-1.5 transition-colors focus:outline-none dark:border-gray-700"
+          :class="
+            canScrollLeft
+              ? 'text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800'
+              : 'pointer-events-none text-gray-300 dark:text-gray-700'
+          "
+          :disabled="!canScrollLeft"
+          :tabindex="canScrollLeft ? 0 : -1"
           aria-label="Scorri a sinistra"
           @click="scrollBy(-1)"
         >
@@ -57,7 +116,14 @@ function scrollBy(direction: -1 | 1) {
         </button>
         <button
           type="button"
-          class="rounded-full border border-gray-300 p-1.5 text-gray-500 transition-colors hover:bg-gray-100 focus:outline-none dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800"
+          class="rounded-full border border-gray-300 p-1.5 transition-colors focus:outline-none dark:border-gray-700"
+          :class="
+            canScrollRight
+              ? 'text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800'
+              : 'pointer-events-none text-gray-300 dark:text-gray-700'
+          "
+          :disabled="!canScrollRight"
+          :tabindex="canScrollRight ? 0 : -1"
           aria-label="Scorri a destra"
           @click="scrollBy(1)"
         >

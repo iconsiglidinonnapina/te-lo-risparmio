@@ -1,5 +1,11 @@
 <script setup lang="ts">
-import type { ProductResponse, AlternativeProduct, PriceEvaluation } from '@/types/analysis';
+import { ref } from 'vue';
+import type {
+  ProductResponse,
+  AlternativeProduct,
+  CategorizedAlternatives,
+  PriceEvaluation,
+} from '@/types/analysis';
 import ProductCard from '@/components/ProductCard.vue';
 import TrafficLight from '@/components/TrafficLight.vue';
 import AlternativesCarousel from '@/components/AlternativesCarousel.vue';
@@ -10,12 +16,20 @@ const { trackEvent } = useAnalytics();
 defineProps<{
   product: ProductResponse;
   alternatives: AlternativeProduct[];
+  categorized: CategorizedAlternatives | null;
   evaluation: PriceEvaluation;
 }>();
 
 defineEmits<{
   reset: [];
 }>();
+
+const higherExpanded = ref(false);
+
+function toggleHigher() {
+  higherExpanded.value = !higherExpanded.value;
+  trackEvent('higher_alternatives_toggled', { expanded: higherExpanded.value });
+}
 </script>
 
 <template>
@@ -24,7 +38,68 @@ defineEmits<{
 
     <TrafficLight :evaluation="evaluation" />
 
-    <AlternativesCarousel :alternatives="alternatives" />
+    <!-- Categorized carousels when tier data is available -->
+    <template v-if="categorized">
+      <AlternativesCarousel
+        v-if="categorized.cheaper.length > 0"
+        :alternatives="categorized.cheaper"
+        title="Alternative a prezzo inferiore"
+        tier="cheaper"
+      />
+
+      <AlternativesCarousel
+        v-if="categorized.similar.length > 0"
+        :alternatives="categorized.similar"
+        title="Alternative nella media"
+        tier="similar"
+      />
+
+      <div v-if="categorized.higher.length > 0" class="space-y-3">
+        <button
+          type="button"
+          :aria-expanded="higherExpanded"
+          aria-controls="higher-alternatives"
+          class="group inline-flex w-full cursor-pointer items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800 shadow-sm transition-all hover:border-amber-300 hover:bg-amber-100 hover:shadow-md active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200 dark:hover:border-amber-800 dark:hover:bg-amber-950/50 dark:focus:ring-offset-gray-950"
+          @click="toggleHigher"
+        >
+          <svg
+            class="h-4 w-4 transition-transform duration-200"
+            :class="{ 'rotate-90': higherExpanded }"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+            aria-hidden="true"
+          >
+            <path
+              fill-rule="evenodd"
+              d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+              clip-rule="evenodd"
+            />
+          </svg>
+          <span class="flex-1 text-left">
+            {{ categorized.higher.length }}
+            {{ categorized.higher.length === 1 ? 'alternativa' : 'alternative' }}
+            con prezzo superiore
+          </span>
+          <span
+            class="text-xs text-amber-600 transition-opacity group-hover:opacity-100 dark:text-amber-400"
+            :class="higherExpanded ? 'opacity-0' : 'opacity-70'"
+          >
+            Tocca per espandere
+          </span>
+        </button>
+
+        <div v-show="higherExpanded" id="higher-alternatives">
+          <AlternativesCarousel
+            :alternatives="categorized.higher"
+            title="Alternative con prezzo superiore"
+            tier="higher"
+          />
+        </div>
+      </div>
+    </template>
+
+    <!-- Flat fallback when categorized data is unavailable -->
+    <AlternativesCarousel v-else :alternatives="alternatives" />
 
     <div class="pt-2 text-center">
       <button

@@ -135,7 +135,7 @@ export async function searchAlternatives(params: SearchAlternativesParams): Prom
   const request = new SearchItemsRequestContent();
   request.partnerTag = partnerTag;
   request.keywords = params.keywords;
-  request.itemCount = 10;
+  request.itemCount = 25;
   request.resources = SEARCH_ITEMS_RESOURCES;
 
   if (params.browseNodeId) {
