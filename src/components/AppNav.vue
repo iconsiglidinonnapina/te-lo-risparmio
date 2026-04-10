@@ -26,25 +26,16 @@ function goHomeAndReset() {
   >
     <!-- Brand -->
     <button type="button" class="relative flex shrink-0 items-center" @click="goHomeAndReset">
-      <img
-        src="@/assets/images/title_logo_black.svg"
-        alt="te lo risparmio"
-        class="h-3 w-auto sm:h-6"
+      <span
+        class="select-none text-lg leading-none font-bold tracking-wide sm:text-2xl"
+        style="font-family: 'Froople', sans-serif"
         :style="{
-          opacity: isDark ? 0 : 1,
-          transition: 'opacity 0.4s ease',
+          color: isDark ? '#f3f4f6' : '#111827',
+          transition: 'color 0.4s ease',
         }"
-      />
-      <img
-        src="@/assets/images/title_logo_white.svg"
-        alt=""
-        aria-hidden="true"
-        class="absolute left-0 top-1/2 h-3 w-auto -translate-y-1/2 sm:h-6"
-        :style="{
-          opacity: isDark ? 1 : 0,
-          transition: 'opacity 0.4s ease',
-        }"
-      />
+      >
+        Te lo risparmio
+      </span>
     </button>
 
     <!-- Navigation links -->

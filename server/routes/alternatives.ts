@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { searchAlternatives, CreatorsApiError } from '../services/creators-api-client.js';
 import { getCachedProduct } from '../services/product-cache.js';
 import { extractSearchQuery } from '../services/keyword-extractor.js';
-import { rankAlternatives, type RankedProduct } from '../services/alternative-ranker.js';
+import { rankByTier, type RankedProduct } from '../services/alternative-ranker.js';
 import { filterByRelevance } from '../services/relevance-filter.js';
 import { buildAffiliateLink } from '../services/affiliate-builder.js';
 import { enrichAllWithReviews } from '../services/review-enricher.js';
@@ -108,36 +108,26 @@ export function alternativesRoutes(app: FastifyInstance) {
           return r.product;
         });
 
-        // 6. Rank and select top 10 (now with relevance integrated)
-        const ranked = rankAlternatives(
+        // 6. Rank per price tier (cheaper gets more slots) and categorize
+        const { cheaper, similar, higher, all } = rankByTier(
           filteredAlternatives,
           product.price.amount,
-          10,
           relevanceScores,
         );
 
         // 7. Attach affiliate links to each alternative
-        const alternatives = ranked.map((alt) => ({
+        const addLink = (alt: RankedProduct) => ({
           ...alt,
           affiliateUrl: buildAffiliateLink(alt.asin),
-        }));
+        });
 
-        // 8. Categorize by price tier relative to the original product
-        const productPrice = product.price.amount;
         const categorized: CategorizedAlternativesResponse = {
-          cheaper: alternatives.filter(
-            (a) => a.price !== null && a.price.amount < productPrice * 0.95,
-          ),
-          similar: alternatives.filter(
-            (a) =>
-              a.price !== null &&
-              a.price.amount >= productPrice * 0.95 &&
-              a.price.amount <= productPrice * 1.1,
-          ),
-          higher: alternatives.filter(
-            (a) => a.price !== null && a.price.amount > productPrice * 1.1,
-          ),
+          cheaper: cheaper.map(addLink),
+          similar: similar.map(addLink),
+          higher: higher.map(addLink),
         };
+
+        const alternatives = all.map(addLink);
 
         const response: AlternativesResponse = { asin, alternatives, categorized };
         alternativesCache.set(asin, response);

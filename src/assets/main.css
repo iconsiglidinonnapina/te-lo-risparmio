@@ -2,6 +2,16 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Froople — playful display font used for the "tlr" brand logo */
+@font-face {
+  font-family: 'Froople';
+  src: url('./font/froople-playful-display-font-2026-04-07-06-21-21-utc/Froople.ttf')
+    format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 /*
  * sr-only: visually hidden but accessible to screen readers.
  * Tailwind v4 includes this as a utility, but we define the
