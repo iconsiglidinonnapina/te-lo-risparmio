@@ -42,15 +42,38 @@ export async function scrapeReviews(asin: string): Promise<ReviewData> {
       return empty;
     }
 
-    // Limit response size to 2 MB to prevent memory exhaustion
+    // Limit response size to 2 MB to prevent memory exhaustion.
+    // Use streaming reader so we abort early even without Content-Length.
+    const MAX_BODY = 2_097_152;
     const contentLength = res.headers.get('content-length');
-    if (contentLength && parseInt(contentLength, 10) > 2_097_152) {
+    if (contentLength && parseInt(contentLength, 10) > MAX_BODY) {
       const empty: ReviewData = { rating: null, count: null };
       REVIEW_CACHE.set(asin, empty);
       return empty;
     }
 
-    const html = await res.text();
+    let html: string;
+    if (res.body) {
+      const reader = res.body.getReader();
+      const chunks: Uint8Array[] = [];
+      let totalBytes = 0;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        totalBytes += value.byteLength;
+        if (totalBytes > MAX_BODY) {
+          void reader.cancel();
+          const empty: ReviewData = { rating: null, count: null };
+          REVIEW_CACHE.set(asin, empty);
+          return empty;
+        }
+        chunks.push(value);
+      }
+      html = new TextDecoder().decode(chunks.length === 1 ? chunks[0] : Buffer.concat(chunks));
+    } else {
+      html = await res.text();
+    }
 
     const ratingMatch = RATING_RE.exec(html);
     const countMatch = COUNT_RE.exec(html);

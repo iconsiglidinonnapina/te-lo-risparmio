@@ -76,6 +76,10 @@ export function isShortLink(input: string): boolean {
 const AMAZON_REDIRECT_HOST =
   /^(?:www\.)?amazon\.(com|co\.uk|co\.jp|com\.br|com\.au|it|de|fr|es|ca|nl|in|sg|ae|sa|pl|se|be|com\.mx|com\.tr)$/i;
 
+/** Allowlist of hosts allowed during redirect chain (Amazon + short-link services) */
+const ALLOWED_REDIRECT_HOST =
+  /^(?:(?:www\.)?amazon\.(com|co\.uk|co\.jp|com\.br|com\.au|it|de|fr|es|ca|nl|in|sg|ae|sa|pl|se|be|com\.mx|com\.tr)|amzn\.to|amzn\.eu|amzn\.it|a\.co)$/i;
+
 const MAX_REDIRECTS = 5;
 const RESOLVE_TIMEOUT_MS = 5000;
 
@@ -126,12 +130,19 @@ export async function resolveShortLink(url: string): Promise<AsinExtractionResul
       }
 
       // Resolve relative redirects
+      let nextUrl: URL;
       try {
-        currentUrl = new URL(location, currentUrl).href;
+        nextUrl = new URL(location, currentUrl);
       } catch {
         return { valid: false, asin: null, error: 'URL di redirect non valido' };
       }
 
+      // SSRF prevention: validate every intermediate redirect host
+      if (!ALLOWED_REDIRECT_HOST.test(nextUrl.hostname)) {
+        return { valid: false, asin: null, error: 'Redirect verso un dominio non autorizzato' };
+      }
+
+      currentUrl = nextUrl.href;
       continue;
     }
 
